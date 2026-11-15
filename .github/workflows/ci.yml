@@ -26,3 +26,5 @@ jobs:
         run: npm run typecheck:example
       - name: Example production build
         run: npm run build:example
+      - name: Production fullstack smoke tests
+        run: node scripts/smoke-test.mjs
