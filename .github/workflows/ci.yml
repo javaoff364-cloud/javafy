@@ -20,6 +20,8 @@ jobs:
         run: npm install
       - name: TypeScript build
         run: npm run build
+      - name: Core router tests
+        run: npm test
       - name: Example typecheck
         run: npm run typecheck:example
       - name: Example production build
