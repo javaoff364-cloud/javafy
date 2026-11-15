@@ -102,7 +102,7 @@ type BabelApi = {
 };
 
 export function createFastRefreshPlugin(root: string): Plugin {
-  const require = createRequire(resolve(root, "package.json"));
+  const require = createRequire(import.meta.url);
   const babel = require("@babel/core") as BabelApi;
   const presetReact = require("@babel/preset-react");
   const presetTypescript = require("@babel/preset-typescript");
