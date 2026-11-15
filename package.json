@@ -9,11 +9,13 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "tsc -b && node packages/cli/dist/index.js build",
+    "build": "tsc -b",
     "clean": "tsc -b --clean",
     "typecheck": "tsc -b --pretty",
     "test": "node --test",
-    "dev": "node packages/cli/dist/index.js dev"
+    "dev": "node packages/cli/dist/index.js dev",
+    "dev:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js dev",
+    "build:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js build"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
