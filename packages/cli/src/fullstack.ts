@@ -83,7 +83,7 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
         layouts
       });
     }
-    if (apiFile) {
+    if (apiFile && segments[0] === "api") {
       api.push({
         path: "/" + [...segments].map(routeSegment).join("/"),
         file: apiFile
@@ -173,7 +173,15 @@ export async function renderFullstackPage(
   options: { request?: Request; static?: boolean } = {}
 ): Promise<{ html: string; props: Record<string, unknown>; status: number } | null> {
   const matched = matchRoute(pathname, manifest.pages);
-  if (!matched) return null;
+  if (!matched) {
+    const notFound = manifest.notFound
+      ? createElement(manifest.notFound, { params: {}, pathname })
+      : createElement("main", null,
+          createElement("h1", null, "404 — Page not found"),
+          createElement("p", null, "No Javafy route matches " + pathname)
+        );
+    return { html: renderToString(notFound), props: {}, status: 404 };
+  }
   const page = matched.route;
   const context: DataContext = {
     params: matched.params,
