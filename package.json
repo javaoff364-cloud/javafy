@@ -1,6 +1,6 @@
 {
   "name": "javafy",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "A high-performance TypeScript fullstack framework.",
   "license": "MIT",
@@ -14,6 +14,7 @@
     "dev": "npm run dev:example",
     "dev:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js dev",
     "build:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js build",
+    "start:example": "cd examples/hello-world && node ../../packages/cli/dist/index.js start",
     "typecheck:example": "tsc --noEmit -p examples/hello-world/tsconfig.json"
   },
   "devDependencies": {
@@ -25,7 +26,9 @@
   "engines": { "node": ">=20.0.0", "npm": ">=10.0.0" },
   "type": "module",
   "dependencies": {
-    "@javafy/router": "0.3.0",
+    "@javafy/core": "0.4.0",
+    "@javafy/cli": "0.4.0",
+    "@javafy/router": "0.4.0",
     "@javafy/server": "0.4.0",
     "esbuild": "^0.25.5",
     "react": "^19.1.0",
