@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — 0.5.0 Runtime Engine (work in progress)
+
+- Added a development error overlay for TypeScript/TSX compilation failures.
+- Added build-error and build-success events to the development server event stream.
+- Added an inspectable module graph endpoint at `/__javafy/module-graph`.
+- Added tests for module graph generation, error serialization, and the development browser client.
+
+Still in progress: React Fast Refresh and state-preserving HMR. Successful rebuilds currently retain the existing full-page reload behavior.
+
 ## 0.4.0 — Fullstack Engine
 
 - Added the `@javafy/server` package and Web-standard API route dispatcher.
