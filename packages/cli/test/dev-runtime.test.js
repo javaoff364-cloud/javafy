@@ -70,6 +70,31 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
     assert.equal(refreshRuntimeResponse.status, 200);
     assert.match(await refreshRuntimeResponse.text(), /performReactRefresh/);
 
+    const reactDomResponse = await fetch(origin + "/@javafy/vendor/react-dom-client.js");
+    assert.equal(reactDomResponse.status, 200);
+    assert.match(await reactDomResponse.text(), /createBaseRoot/);
+
+    const eventsController = new AbortController();
+    const eventsResponse = await fetch(origin + "/__javafy/events", { signal: eventsController.signal });
+    const eventReader = eventsResponse.body.getReader();
+    await eventReader.read();
+    writeFileSync(join(app, "page.tsx"), 'export default function Home() { return <main><h1>Runtime updated</h1></main>; }');
+    const hmrEvent = (async () => {
+      let received = "";
+      while (!received.includes("event: hmr")) {
+        const chunk = await eventReader.read();
+        if (chunk.done) return false;
+        received += new TextDecoder().decode(chunk.value);
+      }
+      return true;
+    })();
+    const hmrSeen = await Promise.race([
+      hmrEvent,
+      new Promise((resolve) => setTimeout(() => resolve(false), 10000))
+    ]);
+    eventsController.abort();
+    assert.equal(hmrSeen, true, "dev server did not publish an HMR event after a source edit");
+
     const pageResponse = await fetch(origin + "/");
     assert.equal(pageResponse.status, 200);
     const html = await pageResponse.text();
