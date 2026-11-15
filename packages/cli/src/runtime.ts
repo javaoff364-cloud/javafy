@@ -83,6 +83,13 @@ export function createDevClientScript(): string {
     catch { showErrors([{ text: "Javafy could not parse the build error response." }]); }
   });
   events.addEventListener("build-success", removeOverlay);
+  events.addEventListener("hmr", async () => {
+    try {
+      await import("/@javafy/app.js?t=" + Date.now());
+    } catch (error) {
+      showErrors([{ text: "Javafy could not apply the update: " + (error instanceof Error ? error.message : String(error)) }]);
+    }
+  });
   events.addEventListener("reload", () => location.reload());
 })();`;
 }
