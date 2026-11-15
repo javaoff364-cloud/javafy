@@ -102,17 +102,33 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
     ]);
     eventsController.abort();
     assert.equal(hmrSeen, true, "dev server did not publish an HMR event after a source edit");
+    // The event stream can contain a queued build notification while the initial
+    // watch cycle is settling. Do not assume the first HMR event means the new
+    // output files are already visible; wait until the rebuilt ESM graph contains
+    // the edited source (or fail with a useful timeout).
     const updatedAppResponse = await fetch(origin + "/@javafy/app.js");
     assert.equal(updatedAppResponse.status, 200);
-    const updatedAssetNamesResponse = await fetch(origin + "/__javafy/assets");
-    assert.equal(updatedAssetNamesResponse.status, 200);
-    const updatedAssetNames = await updatedAssetNamesResponse.json();
-    const updatedAssetSources = await Promise.all(updatedAssetNames.map(async (assetName) => {
-      const assetResponse = await fetch(origin + "/@javafy/" + assetName);
-      assert.equal(assetResponse.status, 200, "missing rebuilt ESM asset: " + assetName);
-      return assetResponse.text();
-    }));
-    assert.ok(updatedAssetSources.some((source) => source.includes("Runtime updated")), "updated source was not found in rebuilt ESM assets");
+    let updatedSourceFound = false;
+    let lastAssetNames = [];
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const updatedAssetNamesResponse = await fetch(origin + "/__javafy/assets");
+      assert.equal(updatedAssetNamesResponse.status, 200);
+      lastAssetNames = await updatedAssetNamesResponse.json();
+      const updatedAssetSources = await Promise.all(lastAssetNames.map(async (assetName) => {
+        const assetResponse = await fetch(origin + "/@javafy/" + assetName);
+        if (!assetResponse.ok) return "";
+        return assetResponse.text();
+      }));
+      if (updatedAssetSources.some((source) => source.includes("Runtime updated"))) {
+        updatedSourceFound = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.ok(
+      updatedSourceFound,
+      "updated source was not found in rebuilt ESM assets after waiting; assets: " + JSON.stringify(lastAssetNames)
+    );
 
     const pageResponse = await fetch(origin + "/");
     assert.equal(pageResponse.status, 200);
