@@ -185,13 +185,9 @@ export async function renderFullstackPage(
   const page = matched.route;
   if (page.path.includes(":") && page.getStaticPaths && !page.getServerSideProps) {
     const staticEntries = await page.getStaticPaths();
-    const allowed = staticEntries.some((entry) => {
-      let generatedPath = page.path;
-      for (const [key, value] of Object.entries(entry.params)) {
-        generatedPath = generatedPath.replace(":" + key, encodeURIComponent(value));
-      }
-      return generatedPath === matched.pathname;
-    });
+    const allowed = staticEntries.some((entry) =>
+      Object.entries(entry.params).every(([key, value]) => matched.params[key] === value)
+    );
     if (!allowed) {
       const notFound = manifest.notFound
         ? createElement(manifest.notFound, { params: matched.params, pathname: matched.pathname })
