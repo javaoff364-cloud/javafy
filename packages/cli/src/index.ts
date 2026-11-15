@@ -296,7 +296,7 @@ javafyEvents.addEventListener("reload", () => location.reload());
 </script>
 <script type="module" src="/@javafy/app.js"></script>`;
         const injected = html.includes("</body>")
-          ? html.replace("</body>", liveReload + "\\n</body>")
+          ? html.replace("</body>", liveReload + "\n</body>")
           : html + liveReload;
         response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
         response.end(injected);
