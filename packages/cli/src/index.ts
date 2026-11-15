@@ -233,9 +233,12 @@ function renderHtmlDocument(
     '<script type="module" src="' + scriptPath + '"></script>'
   ].filter(Boolean).join("\n");
   const root = '<div id="root">' + body + "</div>";
-  const withRoot = shell.includes('<div id="root"></div>')
-    ? shell.replace('<div id="root"></div>', root)
-    : shell.replace("</body>", root + "</body>");
+  const rootPattern = /<div\\b(?=[^>]*\\bid=["']root["'])[^>]*>\\s*<\\/div>/i;
+  const withRoot = rootPattern.test(shell)
+    ? shell.replace(rootPattern, root)
+    : shell.includes("</body>")
+      ? shell.replace("</body>", root + "</body>")
+      : shell + root;
   return withRoot.includes("</body>")
     ? withRoot.replace("</body>", scripts + String.fromCharCode(10) + "</body>")
     : withRoot + scripts;
@@ -355,7 +358,7 @@ async function dev(): Promise<void> {
 
     let pathname: string;
     try {
-      pathname = decodeURIComponent(rawUrl.split("?")[0] ?? "/");
+      pathname = new URL(rawUrl, "http://localhost").pathname;
     } catch {
       response.writeHead(400).end("Bad request");
       return;
@@ -505,7 +508,7 @@ async function start(): Promise<void> {
   const server = createServer(async (request, response) => {
     let pathname: string;
     try {
-      pathname = decodeURIComponent((request.url ?? "/").split("?")[0] ?? "/");
+      pathname = new URL(request.url ?? "/", "http://localhost").pathname;
     } catch {
       sendText(response, 400, "Bad request");
       return;
