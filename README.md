@@ -2,28 +2,22 @@
 
 **Build faster. Run smarter.**
 
-Javafy is a performance-first TypeScript fullstack framework ecosystem for building modern web applications.
+Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy is in early development. APIs and internal architecture may change before 1.0.
+> Javafy 0.4.0 is an early fullstack release. APIs may evolve before 1.0.
 
-## Current status
+## 0.4.0 features
 
-**Stable foundation:** 0.3.0 — File-based Router  
-**In development:** 0.4.0 — Fullstack Engine
-
-Available now:
-- TypeScript and TSX bundling through esbuild.
+- TypeScript and TSX compilation powered by esbuild.
 - React 19 application runtime.
-- File-based routing from `src/app`.
-- Static routes and dynamic segments such as `[id]`.
-- Shared and nested `layout.tsx` files.
-- Custom `not-found.tsx` page and default 404 fallback.
-- Client-side navigation with `Link` and `useRouter`.
-- Development server with automatic rebuild and browser live reload.
-- Production JavaScript bundle and SPA fallback file (`dist/_redirects`).
-- New `@javafy/server` API dispatcher foundation with typed Web Request/Response handlers.
-
-The 0.4.0 API dispatcher is currently a runtime primitive. Automatic `src/app/api/**/route.ts` discovery, CLI server integration, SSR, and SSG are still being implemented.
+- File-based pages, dynamic segments, and nested layouts.
+- File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
+- Server-side rendering (SSR) for page requests.
+- Server-side data loaders with `getServerSideProps`.
+- Static site generation (SSG) with `getStaticProps` and `getStaticPaths`.
+- Development server with browser live reload and watched server route modules.
+- Production Node.js server for SSR and API routes.
+- Static assets and generated HTML in `dist/`.
 
 ## Requirements
 
@@ -40,9 +34,9 @@ npm run build
 npm run dev:example
 ```
 
-Open http://localhost:3000. The example includes `/`, `/about`, and `/blog/first-post`.
+Open http://localhost:3000.
 
-## File-based routing
+## Pages and layouts
 
 Create pages inside `src/app`:
 
@@ -54,9 +48,15 @@ src/
     ├── not-found.tsx
     ├── about/
     │   └── page.tsx
-    └── blog/
-        └── [id]/
-            └── page.tsx
+    ├── blog/
+    │   └── [id]/
+    │       └── page.tsx
+    └── api/
+        ├── health/
+        │   └── route.ts
+        └── users/
+            └── [id]/
+                └── route.ts
 ```
 
 | File | URL |
@@ -64,22 +64,28 @@ src/
 | `src/app/page.tsx` | `/` |
 | `src/app/about/page.tsx` | `/about` |
 | `src/app/blog/[id]/page.tsx` | `/blog/:id` |
+| `src/app/api/health/route.ts` | `/api/health` |
+| `src/app/api/users/[id]/route.ts` | `/api/users/:id` |
 
-A folder name wrapped in square brackets becomes a dynamic URL parameter. For example, `/blog/hello` provides `params.id === "hello"`.
+A folder segment wrapped in square brackets becomes a dynamic parameter. The value is available as `params.id`.
 
-### Page component
+### Page components
+
+Page components receive `params` and `pathname`:
 
 ```tsx
-export default function BlogPage({ params }: {
+export default function BlogPage({
+  params
+}: {
   params: Record<string, string>;
 }) {
   return <h1>Post: {params.id}</h1>;
 }
 ```
 
-### Layout
+### Layouts
 
-A `layout.tsx` wraps pages in its folder and its descendants. The root `src/app/layout.tsx` wraps every matched route.
+A `layout.tsx` wraps pages in its folder and descendants. The root `src/app/layout.tsx` wraps every page.
 
 ```tsx
 import type { ReactNode } from "react";
@@ -89,14 +95,84 @@ export default function Layout({ children }: { children: ReactNode }) {
 }
 ```
 
-### Navigation
+## API routes
+
+Export named HTTP method handlers from a `route.ts` file. Handlers use the standard Web `Request` and `Response` APIs.
+
+```ts
+type Context = { params: Record<string, string> };
+
+export async function GET(_request: Request, { params }: Context) {
+  return Response.json({ id: params.id });
+}
+
+export async function PUT(request: Request, { params }: Context) {
+  const body = await request.json() as { name: string };
+  return Response.json({ id: params.id, name: body.name });
+}
+```
+
+Javafy automatically matches dynamic API parameters, returns 404 for unknown endpoints, 405 with an `Allow` header for unsupported methods, supports `HEAD` via `GET` fallback, and responds to `OPTIONS`. Unhandled handler errors become JSON 500 responses.
+
+## Server-side rendering and data
+
+Javafy renders matched pages to HTML on the server. Export `getServerSideProps` to load request-specific data:
+
+```tsx
+export async function getServerSideProps({
+  params,
+  request,
+  searchParams
+}: {
+  params: Record<string, string>;
+  pathname: string;
+  request: Request;
+  searchParams: URLSearchParams;
+}) {
+  return {
+    userAgent: request.headers.get("user-agent"),
+    selectedTab: searchParams.get("tab"),
+    profileId: params.id
+  };
+}
+
+export default function ProfilePage({ userAgent }: { userAgent: string }) {
+  return <p>Requested with: {userAgent}</p>;
+}
+```
+
+The returned object is passed as page props. This loader runs for each server request and is not included in the browser bundle.
+
+## Static site generation
+
+Static pages are rendered during `javafy build`. Pages without `getServerSideProps` are prerendered by default. Use `getStaticProps` for build-time data:
+
+```tsx
+export async function getStaticPaths() {
+  return [
+    { params: { id: "first-post" } },
+    { params: { id: "second-post" } }
+  ];
+}
+
+export async function getStaticProps({ params }: {
+  params: Record<string, string>;
+}) {
+  return { title: "Post " + params.id };
+}
+```
+
+Dynamic pages are prerendered for the parameter sets returned by `getStaticPaths`. Requests for unknown generated paths return 404 unless the page uses `getServerSideProps`.
+
+Returned props are serialized into the HTML for hydration. Do not put secrets in page props.
+
+## Navigation
 
 ```tsx
 import { Link, useRouter } from "@javafy/router";
 
 export function Navigation() {
   const router = useRouter();
-
   return (
     <>
       <Link href="/about">About</Link>
@@ -106,49 +182,40 @@ export function Navigation() {
 }
 ```
 
-`useRouter()` exposes `pathname`, `params`, `navigate()`, `back()`, and `forward()`. `Link` performs same-origin client-side navigation while preserving normal browser behavior for modified clicks and external URLs.
+`useRouter()` exposes `pathname`, `params`, `navigate()`, `back()`, and `forward()`. In fullstack mode, same-origin navigation performs a document request so server-loaded props stay fresh. Modified clicks and external links retain normal browser behavior.
 
-## API router foundation (0.4.0)
+## Build and run
 
-The new `@javafy/server` package provides a Web-standard API dispatcher. It supports static and dynamic route patterns, typed request handlers, JSON responses, automatic `OPTIONS`, `HEAD` fallback, 404/405 responses, and handler error isolation.
-
-```ts
-import { createApiRouter } from "@javafy/server";
-
-const api = createApiRouter([
-  {
-    path: "/api/health",
-    GET: () => Response.json({ ok: true })
-  },
-  {
-    path: "/api/users/:id",
-    GET: (_request, { params }) => Response.json({ id: params.id })
-  }
-]);
-
-const response = await api(new Request("http://localhost/api/users/42"));
-```
-
-This is the dispatcher API only; the CLI's automatic route-file loading is not yet part of this milestone.
-
-## Production build
+From the repository root:
 
 ```bash
+npm run build
+npm run typecheck:example
+npm test
 npm run build:example
+npm run start:example
 ```
 
-The production output is written to `examples/hello-world/dist`. Javafy writes a `_redirects` SPA fallback file for static hosts that support the Netlify-style redirects format. Configure an equivalent fallback on other hosts.
-
-## CLI commands
-
-From a Javafy project directory:
+Or from a Javafy project directory:
 
 ```bash
 node /path/to/javafy/packages/cli/dist/index.js dev
 node /path/to/javafy/packages/cli/dist/index.js build
+node /path/to/javafy/packages/cli/dist/index.js start
 ```
 
-Projects without file-based routes can continue using the legacy `src/main.tsx` entry.
+- `dev` starts the development server on the configured host and port (default 3000).
+- `build` writes browser assets, prerendered pages, and a server manifest to `dist/`.
+- `start` serves static output and handles API/SSR requests. Set `PORT` and `HOST` to override the server address.
+
+Static hosts can serve prerendered pages and assets from `dist/`. Server-side rendering and API routes require a Node.js runtime running `javafy start`; a static host alone cannot execute them.
+
+## Current limitations
+
+- Fullstack navigation uses document requests to refresh server data; state-preserving client transitions are planned for a later runtime milestone.
+- `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
+- Streaming SSR, middleware, route-level loading/error boundaries, catch-all routes, incremental regeneration, and React Fast Refresh are not included yet.
+- API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
 
 ## Roadmap
 
@@ -156,8 +223,8 @@ Projects without file-based routes can continue using the legacy `src/main.tsx` 
 | --- | --- | --- |
 | 0.1.0 | Foundation | Monorepo, core, CLI, minimal dev server |
 | 0.2.0 | Development Engine | TypeScript/TSX compiler, rebuild, live reload |
-| 0.3.0 | Routing | File-based routes, layouts, dynamic routes, navigation |
-| 0.4.0 | Fullstack | API routes, SSR, SSG, server-side data fetching |
+| 0.3.0 | Routing | File-based routes, layouts, dynamic routes |
+| 0.4.0 | Fullstack Engine | API routes, SSR, SSG, server data loaders |
 | 0.5.0 | Runtime | React Fast Refresh, error overlay, module graph |
 | 1.0.0 | Production | Optimizer, caching, security, benchmarks |
 
