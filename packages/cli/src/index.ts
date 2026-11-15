@@ -332,6 +332,16 @@ async function dev(): Promise<void> {
       return;
     }
 
+    if (pathname === "/api" || pathname.startsWith("/api/")) {
+      try {
+        const webRequest = await toWebRequest(request);
+        await sendWebResponse(await apiHandler(webRequest), response);
+      } catch (error) {
+        sendText(response, 500, error instanceof Error ? error.message : "Internal server error");
+      }
+      return;
+    }
+
     const publicRoot = resolve(root, config.publicDir);
     const relative = normalize(pathname).replace(/^([/\\\\])+/, "") || "index.html";
     let target = resolve(publicRoot, relative);
