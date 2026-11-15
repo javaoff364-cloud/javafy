@@ -4,7 +4,7 @@ import {
   cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync,
   watch, writeFileSync
 } from "node:fs";
-import { dirname, extname, join, normalize, resolve, sep } from "node:path";
+import { dirname, extname, join, normalize, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createApiRouter } from "@javafy/server";
 import { buildFullstackManifest, discoverFullstackFiles, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "./fullstack.js";
@@ -13,8 +13,7 @@ import {
   type BuildResult, type Plugin
 } from "esbuild";
 import { resolveConfig, JAVAFY_VERSION, type JavafyConfig } from "@javafy/core";
-import { createDevClientScript, createModuleGraph, serializeBuildErrors } from "./runtime.js";
-import { createFastRefreshPlugin, createReactDomClientPlugin, FAST_REFRESH_BANNER, FAST_REFRESH_FOOTER } from "./fast-refresh.js";
+import { createDevClientScript, createModuleGraph, serializeBuildErrors, createFastRefreshPlugin, createReactDomClientPlugin, FAST_REFRESH_PREAMBLE, FAST_REFRESH_FOOTER } from "./runtime.js";
 
 const command = process.argv[2] ?? "dev";
 
@@ -233,6 +232,7 @@ function renderHtmlDocument(
   const scripts = [
     "<script>window.__JAVAFY_FULLSTACK__=true;window.__JAVAFY_DATA__=" + data + ";</script>",
     liveReload ? '<script src="/__javafy/client.js"></script>' : "",
+    liveReload ? '<script type="module" src="/__javafy/refresh-preamble.js"></script>' : "",
     '<script type="module" src="' + scriptPath + '"></script>'
   ].filter(Boolean).join("\n");
   const root = '<div id="root">' + body + "</div>";
@@ -285,8 +285,6 @@ async function dev(): Promise<void> {
     entryNames: "[name]",
     chunkNames: "chunks/[name]-[hash]",
     splitting: true,
-    banner: { js: FAST_REFRESH_BANNER },
-    footer: { js: FAST_REFRESH_FOOTER },
     plugins: [
       ...entryConfig.plugins,
       createFastRefreshPlugin(root),
@@ -305,10 +303,13 @@ async function dev(): Promise<void> {
               return;
             }
             currentBuildErrorPayload = "[]";
-            devOutputFiles = new Map((result.outputFiles ?? []).map((file) => [
-              relative(devOutputDirectory, file.path).split(sep).join("/"),
-              file.contents
-            ]));
+            devOutputFiles = new Map((result.outputFiles ?? []).map((file) => {
+              const outputPath = relative(devOutputDirectory, file.path).split(sep).join("/");
+              const contents = outputPath === "app.js"
+                ? Buffer.concat([Buffer.from(file.contents), Buffer.from("\\n" + FAST_REFRESH_FOOTER)])
+                : file.contents;
+              return [outputPath, contents];
+            }));
             moduleGraph = createModuleGraph(result.metafile, root);
             for (const client of clients) {
               client.write("event: build-success\\ndata: ready\\n\\n");
@@ -365,6 +366,15 @@ async function dev(): Promise<void> {
 
   const server = createServer(async (request, response) => {
     const rawUrl = request.url ?? "/";
+    if (rawUrl.split("?")[0] === "/__javafy/refresh-preamble.js") {
+      response.writeHead(200, {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "no-store"
+      });
+      response.end(FAST_REFRESH_PREAMBLE);
+      return;
+    }
+
     if (rawUrl.split("?")[0] === "/__javafy/client.js") {
       response.writeHead(200, {
         "content-type": "text/javascript; charset=utf-8",
