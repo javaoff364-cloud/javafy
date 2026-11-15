@@ -351,26 +351,6 @@ async function dev(): Promise<void> {
       return;
     }
 
-    if (
-      entryConfig.usesRouter &&
-      (pathname === "/" || pathname.endsWith(".html") || !extname(pathname))
-    ) {
-      const html = getHtml(root) ?? getHtml(publicRoot);
-      if (html) {
-        const liveReload = `<script>
-const javafyEvents = new EventSource("/__javafy/events");
-javafyEvents.addEventListener("reload", () => location.reload());
-</script>
-<script type="module" src="/@javafy/app.js"></script>`;
-        const injected = html.includes("</body>")
-          ? html.replace("</body>", liveReload + "\n</body>")
-          : html + liveReload;
-        response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-        response.end(injected);
-        return;
-      }
-    }
-
     if (existsSync(target) && statSync(target).isDirectory()) target = join(target, "index.html");
     if (existsSync(target) && statSync(target).isFile()) {
       response.writeHead(200, {
@@ -380,24 +360,22 @@ javafyEvents.addEventListener("reload", () => location.reload());
       return;
     }
 
-    // Client-side routes share the app shell; asset requests still receive a 404.
     if (entryConfig.usesRouter && !extname(pathname)) {
       const html = getHtml(root) ?? getHtml(publicRoot);
       if (html) {
-        const liveReload = `<script>
-const javafyEvents = new EventSource("/__javafy/events");
-javafyEvents.addEventListener("reload", () => location.reload());
-</script>
-<script type="module" src="/@javafy/app.js"></script>`;
-        const injected = html.includes("</body>")
-          ? html.replace("</body>", liveReload + "\n</body>")
-          : html + liveReload;
-        response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-        response.end(injected);
-        return;
+        try {
+          const webRequest = await toWebRequest(request);
+          const rendered = await renderFullstackPage(manifest, pathname, { request: webRequest });
+          const document = renderHtmlDocument(html, rendered?.html ?? "", pathname, rendered?.props ?? {}, "/@javafy/app.js", true);
+          response.writeHead(rendered ? rendered.status : 404, { "content-type": "text/html; charset=utf-8" });
+          response.end(document);
+          return;
+        } catch (error) {
+          sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");
+          return;
+        }
       }
     }
-
     response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
     response.end("Javafy: file not found.");
   });
