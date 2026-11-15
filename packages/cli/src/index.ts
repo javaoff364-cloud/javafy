@@ -202,7 +202,6 @@ async function build(): Promise<void> {
   const html = getHtml(root) ?? getHtml(publicRoot);
   if (html) {
     const productionHtml = html.replace("</body>", '<script type="module" src="/assets/app.js"></script>\n</body>');
-    readFileSync; // Keep the build output generation explicit below.
     const { writeFileSync } = await import("node:fs");
     writeFileSync(join(output, "index.html"), productionHtml);
   }
