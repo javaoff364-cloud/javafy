@@ -1,4 +1,4 @@
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createElement, type ComponentType } from "react";
@@ -59,12 +59,9 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
   const api: DiscoveredFiles["api"] = [];
   const watchDirs: string[] = [];
   const findFile = (directory: string, names: string[]) =>
-    names.map((name) => resolve(directory, name)).find((file) => {
-      try { return requireExists(file); } catch { return false; }
-    });
+    names.map((name) => resolve(directory, name)).find(existsSync);
 
   function walk(directory: string, segments: string[]): void {
-    const { readdirSync, existsSync, statSync } = require("node:fs") as typeof import("node:fs");
     if (!existsSync(directory) || !statSync(directory).isDirectory()) return;
     watchDirs.push(directory);
     const entries = readdirSync(directory, { withFileTypes: true });
@@ -99,16 +96,11 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
     }
   }
 
-  const { existsSync } = require("node:fs") as typeof import("node:fs");
   const notFound = ["not-found.tsx", "not-found.ts"].map((name) => resolve(appDir, name)).find(existsSync);
   walk(appDir, []);
   return { pages, api, ...(notFound ? { notFound } : {}), watchDirs };
 }
 
-function requireExists(file: string): boolean {
-  const { existsSync } = require("node:fs") as typeof import("node:fs");
-  return existsSync(file);
-}
 
 export async function buildFullstackManifest(
   root: string,
