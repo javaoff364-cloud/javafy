@@ -86,7 +86,7 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
   `);
 
   try {
-    const manifestFile = join(root, "server-manifest.js");
+    const manifestFile = join(root, "server-manifest.mjs");
     await buildFullstackManifest(root, app, manifestFile);
     const manifest = await loadFullstackManifest(manifestFile);
 
@@ -101,6 +101,8 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     const staticPage = await renderFullstackPage(manifest, "/static/prebuilt", { static: true });
     assert.equal(staticPage.status, 200);
     assert.match(staticPage.html, /SSG: prebuilt/);
+    const ungenerated = await renderFullstackPage(manifest, "/static/not-generated");
+    assert.equal(ungenerated.status, 404);
 
     const missing = await renderFullstackPage(manifest, "/missing");
     assert.equal(missing.status, 404);
