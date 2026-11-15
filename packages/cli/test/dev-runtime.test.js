@@ -98,7 +98,8 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
     const pageResponse = await fetch(origin + "/");
     assert.equal(pageResponse.status, 200);
     const html = await pageResponse.text();
-    assert.match(html, /__javafy\/client\.js/);\n    assert.match(html, /__javafy\/refresh-preamble\.js/);
+    assert.match(html, /__javafy\/client\.js/);
+    assert.match(html, /__javafy\/refresh-preamble\.js/);
     assert.match(html, /\/@javafy\/app\.js/);
   } finally {
     child.kill("SIGTERM");
