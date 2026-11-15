@@ -13,6 +13,7 @@ import {
   type BuildResult, type Plugin
 } from "esbuild";
 import { resolveConfig, JAVAFY_VERSION, type JavafyConfig } from "@javafy/core";
+import { createDevClientScript, createModuleGraph, serializeBuildErrors } from "./runtime.js";
 
 const command = process.argv[2] ?? "dev";
 
@@ -230,7 +231,7 @@ function renderHtmlDocument(
   const data = JSON.stringify({ [pathname]: props }).replace(/</g, "\\u003c");
   const scripts = [
     "<script>window.__JAVAFY_FULLSTACK__=true;window.__JAVAFY_DATA__=" + data + ";</script>",
-    liveReload ? '<script>const events=new EventSource("/__javafy/events");events.addEventListener("reload",()=>location.reload());</script>' : "",
+    liveReload ? '<script src="/__javafy/client.js"></script>' : "",
     '<script type="module" src="' + scriptPath + '"></script>'
   ].filter(Boolean).join("\n");
   const root = '<div id="root">' + body + "</div>";
@@ -262,6 +263,7 @@ async function dev(): Promise<void> {
   const clients = new Set<ServerResponse>();
   let bundle = "";
   let buildErrors = false;
+  let moduleGraph = { modules: [] as Array<{ id: string; imports: string[] }> };
 
   if (!entryConfig.usesRouter && !existsSync(entryConfig.entry)) {
     console.error("Javafy: src/main.tsx or a page in src/app/ was not found.");
@@ -279,14 +281,20 @@ async function dev(): Promise<void> {
         setup(build) {
           build.onEnd((result: BuildResult) => {
             buildErrors = result.errors.length > 0;
-            if (!buildErrors && result.outputFiles?.[0]) {
-              bundle = result.outputFiles[0].text;
-              for (const client of clients) client.write("event: reload\ndata: updated\n\n");
-              console.log("  Javafy: application rebuilt");
-            } else if (buildErrors) {
+            if (buildErrors) {
+              const payload = serializeBuildErrors(result.errors);
+              for (const client of clients) client.write("event: build-error\\ndata: " + payload + "\\n\\n");
               console.error("Javafy: compilation failed");
               for (const error of result.errors) console.error(error.text);
+              return;
             }
+            if (result.outputFiles?.[0]) bundle = result.outputFiles[0].text;
+            moduleGraph = createModuleGraph(result.metafile, root);
+            for (const client of clients) {
+              client.write("event: build-success\\ndata: ready\\n\\n");
+              client.write("event: reload\\ndata: updated\\n\\n");
+            }
+            console.log("  Javafy: application rebuilt");
           });
         }
       }
@@ -299,7 +307,8 @@ async function dev(): Promise<void> {
     target: ["es2022"],
     sourcemap: "inline",
     jsx: "automatic",
-    logLevel: "silent"
+    logLevel: "silent",
+    metafile: true
   });
 
   await context.rebuild();
@@ -336,6 +345,24 @@ async function dev(): Promise<void> {
 
   const server = createServer(async (request, response) => {
     const rawUrl = request.url ?? "/";
+    if (rawUrl.split("?")[0] === "/__javafy/client.js") {
+      response.writeHead(200, {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "no-store"
+      });
+      response.end(createDevClientScript());
+      return;
+    }
+
+    if (rawUrl.split("?")[0] === "/__javafy/module-graph") {
+      response.writeHead(200, {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store"
+      });
+      response.end(JSON.stringify(moduleGraph));
+      return;
+    }
+
     if (rawUrl === "/__javafy/events") {
       response.writeHead(200, {
         "content-type": "text/event-stream",
@@ -389,7 +416,16 @@ async function dev(): Promise<void> {
       response.writeHead(200, {
         "content-type": mimeTypes[extname(target)] ?? "application/octet-stream"
       });
-      response.end(readFileSync(target));
+      const fileContent = readFileSync(target);
+      if (extname(target) === ".html") {
+        const html = fileContent.toString("utf8");
+        const clientScript = '<script src="/__javafy/client.js"></script>';
+        response.end(html.includes("</body>")
+          ? html.replace("</body>", clientScript + "</body>")
+          : html + clientScript);
+      } else {
+        response.end(fileContent);
+      }
       return;
     }
 
