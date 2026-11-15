@@ -150,7 +150,7 @@ export function createReactDomClientPlugin(root: string): Plugin {
   return {
     name: "javafy-react-root-persistence",
     setup(build) {
-      build.onResolve({ filter: /^react-dom\\/client$/ }, () => ({
+      build.onResolve({ filter: /^react-dom\/client$/ }, () => ({
         path: "react-dom-client",
         namespace: "javafy-react-dom"
       }));
