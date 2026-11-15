@@ -69,14 +69,14 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
     const assetsResponse = await fetch(origin + "/__javafy/assets");
     assert.equal(assetsResponse.status, 200);
     const assetNames = await assetsResponse.json();
-    assert.ok(assetNames.includes("vendor/react-refresh.js"), JSON.stringify(assetNames));
-    assert.ok(assetNames.includes("vendor/react-dom-client.js"), JSON.stringify(assetNames));
+    assert.ok(assetNames.includes("react-refresh.js"), JSON.stringify(assetNames));
+    assert.ok(assetNames.includes("react-dom-client.js"), JSON.stringify(assetNames));
 
-    const refreshRuntimeResponse = await fetch(origin + "/@javafy/vendor/react-refresh.js");
+    const refreshRuntimeResponse = await fetch(origin + "/@javafy/react-refresh.js");
     assert.equal(refreshRuntimeResponse.status, 200);
     assert.ok((await refreshRuntimeResponse.text()).length > 0);
 
-    const reactDomResponse = await fetch(origin + "/@javafy/vendor/react-dom-client.js");
+    const reactDomResponse = await fetch(origin + "/@javafy/react-dom-client.js");
     assert.equal(reactDomResponse.status, 200);
     assert.ok((await reactDomResponse.text()).length > 0);
 
