@@ -185,8 +185,10 @@ export async function renderFullstackPage(
   const page = matched.route;
   if (page.path.includes(":") && page.getStaticPaths && !page.getServerSideProps) {
     const staticEntries = await page.getStaticPaths();
+    const requiredParams = [...page.path.matchAll(/:([^/]+)/g)].map((match) => match[1] ?? "");
     const allowed = staticEntries.some((entry) =>
-      Object.entries(entry.params).every(([key, value]) => matched.params[key] === value)
+      requiredParams.every((key) => entry.params[key] === matched.params[key]) &&
+      Object.keys(entry.params).every((key) => requiredParams.includes(key))
     );
     if (!allowed) {
       const notFound = manifest.notFound
