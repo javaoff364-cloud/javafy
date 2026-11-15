@@ -41,5 +41,5 @@ test("dev client listens for errors and reload events", () => {
   assert.match(script, /build-error/);
   assert.match(script, /build-success/);
   assert.match(script, /location\.reload/);
-  assert.match(script, /javafy-error-overlay/);
+  assert.match(script, /javafy-error-overlay/);\n  assert.match(script, /addEventListener\\("hmr"/);\n  assert.match(script, /@javafy\\/app\\.js/);
 });
