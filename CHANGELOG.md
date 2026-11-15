@@ -1,15 +1,21 @@
 # Changelog
 
-## 0.4.0 — Fullstack Engine (in development)
+## 0.4.0 — Fullstack Engine
 
-- Added the new `@javafy/server` package.
-- Added a typed Web Request/Response API dispatcher.
-- Added static and dynamic API route matching.
-- Added GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD method handling.
-- Added automatic OPTIONS responses, HEAD fallback, 404/405 responses, and handler error isolation.
-- Added API dispatcher tests for methods, parameters, request bodies, and error cases.
+- Added the `@javafy/server` package and Web-standard API route dispatcher.
+- Added automatic discovery of `src/app/api/**/route.ts` files.
+- Added GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD API handlers with dynamic parameters.
+- Added development and production API request handling.
+- Added server-side rendering for file-based pages.
+- Added `getServerSideProps` for request-time data loading.
+- Added static site generation for static routes and dynamic paths returned by `getStaticPaths`.
+- Added `getStaticProps` for build-time page data.
+- Added a production `start` command to serve static files, API routes, and SSR pages.
+- Added server route file watching in development.
+- Added SSR hydration data transfer and full document navigation to keep server props current.
+- Added API route and SSR/SSG examples, route discovery tests, and production smoke tests.
 
-Not yet included: automatic API route-file discovery, CLI HTTP server integration, SSR, SSG, and server-side page data loading.
+Known limitations: `getStaticPaths` currently accepts an array of `{ params }`; fallback modes, streaming SSR, middleware, incremental regeneration, and state-preserving client navigation are not included.
 
 ## 0.3.0 — File-based Router
 
@@ -23,7 +29,7 @@ Not yet included: automatic API route-file discovery, CLI HTTP server integratio
 - Added development SPA fallback and production `dist/_redirects`.
 - Updated the hello-world example and documentation.
 
-Limitations: routing is client-side in this release. SSR, API routes, SSG, route-level loading/error boundaries, catch-all segments, and state-preserving HMR are not included.
+Limitations: routing was client-side in this release. SSR, API routes, SSG, route-level loading/error boundaries, catch-all segments, and state-preserving HMR were not included.
 
 ## 0.2.0 — Development Engine
 
