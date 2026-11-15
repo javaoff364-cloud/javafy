@@ -209,7 +209,7 @@ async function toWebRequest(request: IncomingMessage): Promise<Request> {
   const body = chunks.length ? Buffer.concat(chunks) : undefined;
   const host = request.headers.host ?? "localhost";
   const init: RequestInit = { method, headers };
-  if (body) init.body = body;
+  if (body) init.body = body as unknown as BodyInit;
   return new Request("http://" + host + (request.url ?? "/"), init);
 }
 
