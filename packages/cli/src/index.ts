@@ -251,6 +251,10 @@ async function dev(): Promise<void> {
   const root = process.cwd();
   const appDir = resolve(root, config.appDir);
   const entryConfig = entryOptions(root, appDir);
+  const manifestFile = resolve(root, ".javafy/server-manifest.js");
+  await buildFullstackManifest(root, appDir, manifestFile);
+  const manifest = await loadFullstackManifest(manifestFile);
+  const apiHandler = createApiRouter(manifest.apiRoutes);
   const clients = new Set<ServerResponse>();
   let bundle = "";
   let buildErrors = false;
@@ -297,7 +301,7 @@ async function dev(): Promise<void> {
   await context.rebuild();
   await context.watch();
 
-  const server = createServer((request, response) => {
+  const server = createServer(async (request, response) => {
     const rawUrl = request.url ?? "/";
     if (rawUrl === "/__javafy/events") {
       response.writeHead(200, {
