@@ -2,12 +2,14 @@
 
 ## 0.5.0 — Runtime Engine
 
-- Added a development error overlay for TypeScript/TSX compilation failures.
-- Added build-error and build-success events to the development server event stream.
-- Added an inspectable module graph endpoint at `/__javafy/module-graph`.
-- Added tests for module graph generation, error serialization, and the development browser client.
+- Added React Refresh transforms for application TS/TSX modules.
+- Added split ESM development output and HMR updates without reloading the document.
+- Preserved React roots between updates and reused unchanged vendor chunks.
+- Added a browser compilation-error overlay and module graph diagnostics endpoint.
+- Added integration coverage for the runtime assets, refresh preamble, and HMR events.
+- Kept the React Refresh runtime out of production bundles.
 
-Still in progress: React Fast Refresh and state-preserving HMR. Successful rebuilds currently retain the existing full-page reload behavior.
+Known limitations: incompatible component signature changes, HTML shell edits, global side effects, and server-only route changes may require a full page refresh or server restart. Fast Refresh is development-only.
 
 ## 0.4.0 — Fullstack Engine
 
