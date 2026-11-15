@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import {
-  cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync,
-  statSync, writeFileSync
+  cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync,
+  watch, writeFileSync
 } from "node:fs";
 import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { createApiRouter } from "@javafy/server";
-import { buildFullstackManifest, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "./fullstack.js";
+import { buildFullstackManifest, discoverFullstackFiles, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "./fullstack.js";
 import {
   build as esbuild, context as createBuildContext,
   type BuildResult, type Plugin
@@ -233,7 +233,7 @@ function renderHtmlDocument(
     "<script>window.__JAVAFY_DATA__=" + data + ";</script>",
     liveReload ? '<script>const events=new EventSource("/__javafy/events");events.addEventListener("reload",()=>location.reload());</script>' : "",
     '<script type="module" src="' + scriptPath + '"></script>'
-  ].filter(Boolean).join(String.fromCharCode(10));
+  ].filter(Boolean).join("\n");
   const root = '<div id="root">' + body + "</div>";
   const withRoot = shell.includes('<div id="root"></div>')
     ? shell.replace('<div id="root"></div>', root)
@@ -255,8 +255,8 @@ async function dev(): Promise<void> {
   const entryConfig = entryOptions(root, appDir);
   const manifestFile = resolve(root, ".javafy/server-manifest.js");
   await buildFullstackManifest(root, appDir, manifestFile);
-  const manifest = await loadFullstackManifest(manifestFile);
-  const apiHandler = createApiRouter(manifest.apiRoutes);
+  let manifest = await loadFullstackManifest(manifestFile);
+  let apiHandler = createApiRouter(manifest.apiRoutes);
   const clients = new Set<ServerResponse>();
   let bundle = "";
   let buildErrors = false;
@@ -302,6 +302,35 @@ async function dev(): Promise<void> {
 
   await context.rebuild();
   await context.watch();
+
+  // Keep server-side route modules in sync while the dev server is running.
+  const manifestWatchers = new Map<string, ReturnType<typeof watch>>();
+  let manifestReloadTimer: ReturnType<typeof setTimeout> | undefined;
+  const syncManifestWatchers = () => {
+    for (const directory of discoverFullstackFiles(appDir).watchDirs) {
+      if (manifestWatchers.has(directory)) continue;
+      try {
+        const watcher = watch(directory, () => {
+          if (manifestReloadTimer) clearTimeout(manifestReloadTimer);
+          manifestReloadTimer = setTimeout(async () => {
+            try {
+              await buildFullstackManifest(root, appDir, manifestFile);
+              manifest = await loadFullstackManifest(manifestFile);
+              apiHandler = createApiRouter(manifest.apiRoutes);
+              syncManifestWatchers();
+              console.log("  Javafy: server routes refreshed");
+            } catch (error) {
+              console.error("Javafy: server route rebuild failed", error);
+            }
+          }, 100);
+        });
+        manifestWatchers.set(directory, watcher);
+      } catch (error) {
+        console.warn("Javafy: could not watch " + directory, error);
+      }
+    }
+  };
+  syncManifestWatchers();
 
   const server = createServer(async (request, response) => {
     const rawUrl = request.url ?? "/";
@@ -391,6 +420,8 @@ async function dev(): Promise<void> {
 
   const shutdown = async () => {
     server.close();
+    for (const watcher of manifestWatchers.values()) watcher.close();
+    if (manifestReloadTimer) clearTimeout(manifestReloadTimer);
     await context.dispose();
     process.exit(0);
   };
@@ -443,7 +474,7 @@ async function build(): Promise<void> {
       const rendered = await renderFullstackPage(manifest, pathname, { static: true });
       if (!rendered) continue;
       const document = renderHtmlDocument(html, rendered.html, pathname, rendered.props, "/assets/app.js");
-      const relative = pathname === "/" ? "index.html" : join(pathname.replace(/^\\//, ""), "index.html");
+      const relative = pathname === "/" ? "index.html" : join(pathname.replace(/^\//, ""), "index.html");
       const destination = join(output, relative);
       mkdirSync(dirname(destination), { recursive: true });
       writeFileSync(destination, document);
@@ -498,7 +529,7 @@ async function start(): Promise<void> {
       return;
     }
     if (existsSync(target) && statSync(target).isDirectory()) target = join(target, "index.html");
-    if (!extname(pathname) && !existsSync(target)) target = join(target, "index.html");
+    if (pathname === "/" && !existsSync(target)) target = join(output, "index.html");
 
     if (existsSync(target) && statSync(target).isFile()) {
       response.writeHead(200, {
