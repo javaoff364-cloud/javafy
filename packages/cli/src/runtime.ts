@@ -111,11 +111,11 @@ export function createFastRefreshPlugin(root: string): Plugin {
   return {
     name: "javafy-react-fast-refresh",
     setup(build) {
-      build.onLoad({ filter: /\\.[jt]sx?$/ }, async (args) => {
+      build.onLoad({ filter: /\.[jt]sx?$/ }, async (args) => {
         const file = resolve(args.path);
         if (!file.startsWith(root + sep) || file.includes(sep + "node_modules" + sep)) return null;
         const source = await readFile(file, "utf8");
-        const isTsx = /\\.(?:tsx|jsx)$/.test(file);
+        const isTsx = /\.(?:tsx|jsx)$/.test(file);
         const transformed = await babel.transformAsync(source, {
           filename: file,
           sourceType: "module",
