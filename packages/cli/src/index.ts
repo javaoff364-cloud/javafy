@@ -284,6 +284,26 @@ async function dev(): Promise<void> {
       return;
     }
 
+    if (
+      entryConfig.usesRouter &&
+      (pathname === "/" || pathname.endsWith(".html") || !extname(pathname))
+    ) {
+      const html = getHtml(root) ?? getHtml(publicRoot);
+      if (html) {
+        const liveReload = `<script>
+const javafyEvents = new EventSource("/__javafy/events");
+javafyEvents.addEventListener("reload", () => location.reload());
+</script>
+<script type="module" src="/@javafy/app.js"></script>`;
+        const injected = html.includes("</body>")
+          ? html.replace("</body>", liveReload + "\\n</body>")
+          : html + liveReload;
+        response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+        response.end(injected);
+        return;
+      }
+    }
+
     if (existsSync(target) && statSync(target).isDirectory()) target = join(target, "index.html");
     if (existsSync(target) && statSync(target).isFile()) {
       response.writeHead(200, {
