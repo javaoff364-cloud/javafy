@@ -197,6 +197,55 @@ function entryOptions(root: string, appDir: string) {
   };
 }
 
+async function toWebRequest(request: IncomingMessage): Promise<Request> {
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(request.headers)) {
+    if (Array.isArray(value)) value.forEach((item) => headers.append(name, item));
+    else if (value !== undefined) headers.set(name, value);
+  }
+  const method = (request.method ?? "GET").toUpperCase();
+  const chunks: Buffer[] = [];
+  if (method !== "GET" && method !== "HEAD") {
+    for await (const chunk of request) chunks.push(Buffer.from(chunk));
+  }
+  const body = chunks.length ? Buffer.concat(chunks) : undefined;
+  const host = request.headers.host ?? "localhost";
+  const init: RequestInit = { method, headers };
+  if (body) init.body = body;
+  return new Request("http://" + host + (request.url ?? "/"), init);
+}
+
+async function sendWebResponse(response: Response, target: ServerResponse): Promise<void> {
+  target.writeHead(response.status, Object.fromEntries(response.headers.entries()));
+  target.end(Buffer.from(await response.arrayBuffer()));
+}
+
+function renderHtmlDocument(
+  shell: string,
+  body: string,
+  pathname: string,
+  props: Record<string, unknown>,
+  scriptPath: string,
+  liveReload = false
+): string {
+  const data = JSON.stringify({ [pathname]: props }).replace(/</g, "\\u003c");
+  const scripts = [
+    "<script>window.__JAVAFY_DATA__=" + data + ";</script>",
+    liveReload ? '<script>const events=new EventSource("/__javafy/events");events.addEventListener("reload",()=>location.reload());</script>' : "",
+    '<script type="module" src="' + scriptPath + '"></script>'
+  ].filter(Boolean).join("\\n");
+  const root = '<div id="root">' + body + "</div>";
+  const withRoot = shell.replace(/<div\\s+id=["']root["']\\s*>\\s*<\\/div>/i, root);
+  return withRoot.includes("</body>")
+    ? withRoot.replace("</body>", scripts + "\\n</body>")
+    : withRoot + scripts;
+}
+
+function sendText(response: ServerResponse, status: number, message: string): void {
+  response.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
+  response.end(message);
+}
+
 async function dev(): Promise<void> {
   const config = resolveConfig(await loadConfig());
   const root = process.cwd();
