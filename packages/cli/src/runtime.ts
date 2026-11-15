@@ -184,7 +184,7 @@ export function createReactDomClientPlugin(root: string): Plugin {
   };
 }
 
-export const FAST_REFRESH_PREAMBLE = `import RefreshRuntime from "/@javafy/vendor/react-refresh.js";
+export const FAST_REFRESH_PREAMBLE = `import RefreshRuntime from "/@javafy/react-refresh.js";
 RefreshRuntime.injectIntoGlobalHook(window);
 window.__JAVAFY_REFRESH_RUNTIME__ = RefreshRuntime;
 window.__JAVAFY_REFRESH_MODULE__ = "";
