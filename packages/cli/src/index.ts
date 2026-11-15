@@ -26,6 +26,7 @@ Usage:
 Commands:
   dev       Start the development server with routing and live reload
   build     Build the application for production
+  start     Start the production SSR/API server
   --version Show the current version
   --help    Show this help message
 
