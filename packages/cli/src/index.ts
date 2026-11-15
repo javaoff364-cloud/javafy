@@ -6,8 +6,6 @@ import {
 } from "node:fs";
 import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createElement } from "react";
-import { renderToString } from "react-dom/server";
 import { createApiRouter } from "@javafy/server";
 import { buildFullstackManifest, discoverFullstackFiles, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "./fullstack.js";
 import {
