@@ -6,26 +6,22 @@ Javafy is a performance-first TypeScript fullstack framework ecosystem for build
 
 > Javafy is in early development. APIs and internal architecture may change before 1.0.
 
-## Goals
-
-- TypeScript-first development.
-- Fast compilation and development feedback.
-- Frontend and backend features in one framework.
-- Efficient production builds and runtime performance.
-- Clear, modular architecture.
-
 ## Current status
 
-**Version:** 0.2.0 — Development Engine
+**Version:** 0.3.0 — File-based Router
 
 Available now:
 - TypeScript and TSX bundling through esbuild.
-- React and React DOM application entry.
-- Development server with automatic rebuild.
-- Browser live reload after successful rebuilds.
-- Production JavaScript bundling and static asset output.
+- React 19 application runtime.
+- File-based routing from `src/app`.
+- Static routes and dynamic segments such as `[id]`.
+- Shared and nested `layout.tsx` files.
+- Custom `not-found.tsx` page and default 404 fallback.
+- Client-side navigation with `Link` and `useRouter`.
+- Development server with automatic rebuild and browser live reload.
+- Production JavaScript bundle and SPA fallback file (`dist/_redirects`).
 
-Live reload currently refreshes the page. State-preserving React Fast Refresh and true HMR are planned for a later release.
+The current router is client-side. Server-side rendering, API routes, and static pre-rendering are not included in 0.3.0.
 
 ## Requirements
 
@@ -42,7 +38,73 @@ npm run build
 npm run dev:example
 ```
 
-Open http://localhost:3000. Edit `examples/hello-world/src/main.tsx` and save to trigger a rebuild and browser reload.
+Open http://localhost:3000. The example includes `/`, `/about`, and `/blog/first-post`.
+
+## File-based routing
+
+Create pages inside `src/app`:
+
+```text
+src/
+└── app/
+    ├── layout.tsx
+    ├── page.tsx
+    ├── not-found.tsx
+    ├── about/
+    │   └── page.tsx
+    └── blog/
+        └── [id]/
+            └── page.tsx
+```
+
+| File | URL |
+| --- | --- |
+| `src/app/page.tsx` | `/` |
+| `src/app/about/page.tsx` | `/about` |
+| `src/app/blog/[id]/page.tsx` | `/blog/:id` |
+
+A folder name wrapped in square brackets becomes a dynamic URL parameter. For example, `/blog/hello` provides `params.id === "hello"`.
+
+### Page component
+
+```tsx
+export default function BlogPage({ params }: {
+  params: Record<string, string>;
+}) {
+  return <h1>Post: {params.id}</h1>;
+}
+```
+
+### Layout
+
+A `layout.tsx` wraps pages in its folder and its descendants. The root `src/app/layout.tsx` wraps every matched route.
+
+```tsx
+import type { ReactNode } from "react";
+
+export default function Layout({ children }: { children: ReactNode }) {
+  return <main>{children}</main>;
+}
+```
+
+### Navigation
+
+```tsx
+import { Link, useRouter } from "@javafy/router";
+
+export function Navigation() {
+  const router = useRouter();
+
+  return (
+    <>
+      <Link href="/about">About</Link>
+      <button onClick={() => router.navigate("/")}>Home</button>
+    </>
+  );
+}
+```
+
+`useRouter()` exposes `pathname`, `params`, `navigate()`, `back()`, and `forward()`. `Link` performs same-origin client-side navigation while preserving normal browser behavior for modified clicks and external URLs.
 
 ## Production build
 
@@ -50,16 +112,18 @@ Open http://localhost:3000. Edit `examples/hello-world/src/main.tsx` and save to
 npm run build:example
 ```
 
-The example production output is written to `examples/hello-world/dist`.
+The production output is written to `examples/hello-world/dist`. Javafy writes a `_redirects` SPA fallback file for static hosts that support the Netlify-style redirects format. Configure an equivalent fallback on other hosts.
 
 ## CLI commands
 
-From a Javafy project directory containing `src/main.tsx` and `index.html`:
+From a Javafy project directory:
 
 ```bash
 node /path/to/javafy/packages/cli/dist/index.js dev
 node /path/to/javafy/packages/cli/dist/index.js build
 ```
+
+Projects without file-based routes can continue using the legacy `src/main.tsx` entry.
 
 ## Roadmap
 
@@ -67,8 +131,9 @@ node /path/to/javafy/packages/cli/dist/index.js build
 | --- | --- | --- |
 | 0.1.0 | Foundation | Monorepo, core, CLI, minimal dev server |
 | 0.2.0 | Development Engine | TypeScript/TSX compiler, rebuild, live reload |
-| 0.3.0 | Routing | File-based routes, layouts, dynamic routes |
-| 0.4.0 | Fullstack | API routes, SSR, SSG |
+| 0.3.0 | Routing | File-based routes, layouts, dynamic routes, navigation |
+| 0.4.0 | Fullstack | API routes, SSR, SSG, server-side data fetching |
+| 0.5.0 | Runtime | React Fast Refresh, error overlay, module graph |
 | 1.0.0 | Production | Optimizer, caching, security, benchmarks |
 
 ## Performance
