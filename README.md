@@ -4,9 +4,9 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 0.4.0 is an early fullstack release. APIs may evolve before 1.0.
+> Javafy 0.5.0 is an early runtime release. APIs may evolve before 1.0.
 
-## 0.4.0 features
+## 0.5.0 features
 
 - TypeScript and TSX compilation powered by esbuild.
 - React 19 application runtime.
@@ -15,7 +15,7 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 - Server-side rendering (SSR) for page requests.
 - Server-side data loaders with `getServerSideProps`.
 - Static site generation (SSG) with `getStaticProps` and `getStaticPaths`.
-- Development server with browser live reload and watched server route modules.
+- Development server with React Fast Refresh, state-preserving HMR, browser error overlay, module graph inspection, and watched server route modules.
 - Production Node.js server for SSR and API routes.
 - Static assets and generated HTML in `dist/`.
 
@@ -220,7 +220,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 - Fullstack navigation uses document requests to refresh server data; state-preserving client transitions are planned for a later runtime milestone.
 - `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
-- Streaming SSR, middleware, route-level loading/error boundaries, catch-all routes, incremental regeneration, and React Fast Refresh are not included yet.
+- Streaming SSR, middleware, route-level loading/error boundaries, catch-all routes, and incremental regeneration are not included yet. React Fast Refresh is development-only.
 - API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
 
 ## Roadmap
@@ -231,7 +231,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.2.0 | Development Engine | TypeScript/TSX compiler, rebuild, live reload |
 | 0.3.0 | Routing | File-based routes, layouts, dynamic routes |
 | 0.4.0 | Fullstack Engine | API routes, SSR, SSG, server data loaders |
-| 0.5.0 | Runtime | React Fast Refresh, error overlay, module graph |
+| 0.5.0 | Runtime | React Fast Refresh, state-preserving HMR, error overlay, module graph |
 | 1.0.0 | Production | Optimizer, caching, security, benchmarks |
 
 ## Performance
