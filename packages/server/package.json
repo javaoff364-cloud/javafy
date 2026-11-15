@@ -8,6 +8,6 @@
   "types": "./dist/index.d.ts",
   "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
   "files": ["dist"],
-  "dependencies": { "@javafy/core": "0.3.0" },
+  "dependencies": { "@javafy/core": "0.4.0" },
   "scripts": { "build": "tsc -b" }
 }
