@@ -27,4 +27,4 @@ jobs:
       - name: Example production build
         run: npm run build:example
       - name: Production fullstack smoke tests
-        run: node scripts/smoke-test.mjs
+        run: node scripts/verify-production.mjs
