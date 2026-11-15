@@ -1,19 +1,18 @@
 {
   "name": "@javafy/cli",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Command-line interface for Javafy.",
   "license": "MIT",
   "type": "module",
-  "bin": {
-    "javafy": "./dist/index.js"
-  },
+  "bin": { "javafy": "./dist/index.js" },
   "dependencies": {
-    "@javafy/core": "0.3.0",
-    "@javafy/router": "0.3.0",
-    "esbuild": "^0.25.5"
+    "@javafy/core": "0.4.0",
+    "@javafy/router": "0.4.0",
+    "@javafy/server": "0.4.0",
+    "esbuild": "^0.25.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
-  "scripts": {
-    "build": "tsc -b"
-  },
+  "scripts": { "build": "tsc -b" },
   "files": ["dist"]
 }
