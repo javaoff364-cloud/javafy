@@ -104,14 +104,15 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
     assert.equal(hmrSeen, true, "dev server did not publish an HMR event after a source edit");
     const updatedAppResponse = await fetch(origin + "/@javafy/app.js");
     assert.equal(updatedAppResponse.status, 200);
-    const updatedAppSource = await updatedAppResponse.text();
-    const chunkPaths = [...updatedAppSource.matchAll(/from\s+"\.\/([^"]+\.js)"/g)].map((match) => match[1]);
-    const chunkSources = await Promise.all(chunkPaths.map(async (chunkPath) => {
-      const chunkResponse = await fetch(origin + "/@javafy/" + chunkPath);
-      assert.equal(chunkResponse.status, 200, "missing updated ESM chunk: " + chunkPath);
-      return chunkResponse.text();
+    const updatedAssetNamesResponse = await fetch(origin + "/__javafy/assets");
+    assert.equal(updatedAssetNamesResponse.status, 200);
+    const updatedAssetNames = await updatedAssetNamesResponse.json();
+    const updatedAssetSources = await Promise.all(updatedAssetNames.map(async (assetName) => {
+      const assetResponse = await fetch(origin + "/@javafy/" + assetName);
+      assert.equal(assetResponse.status, 200, "missing rebuilt ESM asset: " + assetName);
+      return assetResponse.text();
     }));
-    assert.ok(chunkSources.some((source) => source.includes("Runtime updated")), "updated source was not found in split ESM chunks");
+    assert.ok(updatedAssetSources.some((source) => source.includes("Runtime updated")), "updated source was not found in rebuilt ESM assets");
 
     const pageResponse = await fetch(origin + "/");
     assert.equal(pageResponse.status, 200);
