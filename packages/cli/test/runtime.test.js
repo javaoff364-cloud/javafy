@@ -38,10 +38,10 @@ test("serializes build errors without allowing HTML injection", () => {
 
 test("dev client listens for compilation errors and HMR updates", () => {
   const script = createDevClientScript();
-  assert.match(script, /build-error/);
-  assert.match(script, /build-success/);
-  assert.match(script, /location\\.reload/);
-  assert.match(script, /javafy-error-overlay/);
+  assert.ok(script.includes("build-error"));
+  assert.ok(script.includes("build-success"));
+  assert.ok(script.includes("location.reload"));
+  assert.ok(script.includes("javafy-error-overlay"));
   assert.ok(script.includes('addEventListener("hmr"'));
   assert.ok(script.includes("/@javafy/app.js"));
 });
