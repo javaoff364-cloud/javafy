@@ -166,11 +166,13 @@ Dynamic pages are prerendered for the parameter sets returned by `getStaticPaths
 
 Returned props are serialized into the HTML for hydration. Do not put secrets in page props.
 
-## Development diagnostics (0.5.0 preview)
+## Development runtime (0.5.0)
 
-The 0.5.0 development runtime adds a browser compilation-error overlay and exposes the current esbuild module graph at `http://localhost:3000/__javafy/module-graph` while `javafy dev` is running. The endpoint returns JSON with module IDs and their internal imports.
+The development server transforms React components with the React Refresh Babel transform. When a module changes, Javafy rebuilds split ESM output and imports the updated application entry without reloading the document. React roots and unchanged vendor chunks are reused so compatible component state can survive edits.
 
-This is an early preview: successful rebuilds still trigger a full-page reload. React Fast Refresh and state-preserving HMR are not implemented yet.
+Compilation errors appear in a browser overlay and are also reported in the terminal. The current esbuild module graph is available as JSON at `http://localhost:3000/__javafy/module-graph` while `javafy dev` is running. This endpoint is intended for diagnostics and tooling.
+
+HMR applies to modules in the application source tree. Changes that alter component signatures incompatibly, global side effects, HTML shell files, or server-only route modules may require a full page refresh or server restart.
 
 ## Navigation
 
