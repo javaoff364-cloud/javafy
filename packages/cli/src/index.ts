@@ -228,7 +228,7 @@ function renderHtmlDocument(
 ): string {
   const data = JSON.stringify({ [pathname]: props }).replace(/</g, "\\u003c");
   const scripts = [
-    "<script>window.__JAVAFY_DATA__=" + data + ";</script>",
+    "<script>window.__JAVAFY_FULLSTACK__=true;window.__JAVAFY_DATA__=" + data + ";</script>",
     liveReload ? '<script>const events=new EventSource("/__javafy/events");events.addEventListener("reload",()=>location.reload());</script>' : "",
     '<script type="module" src="' + scriptPath + '"></script>'
   ].filter(Boolean).join("\n");
