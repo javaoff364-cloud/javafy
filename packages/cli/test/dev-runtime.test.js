@@ -64,7 +64,9 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
 
     const appResponse = await fetch(origin + "/@javafy/app.js");
     assert.equal(appResponse.status, 200);
-    assert.match(await appResponse.text(), /performReactRefresh/);
+    const initialAppSource = await appResponse.text();
+    assert.match(initialAppSource, /performReactRefresh/);
+    assert.match(initialAppSource, /RefreshReg/);
 
     const assetsResponse = await fetch(origin + "/__javafy/assets");
     assert.equal(assetsResponse.status, 200);
@@ -100,6 +102,9 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
     ]);
     eventsController.abort();
     assert.equal(hmrSeen, true, "dev server did not publish an HMR event after a source edit");
+    const updatedAppResponse = await fetch(origin + "/@javafy/app.js");
+    assert.equal(updatedAppResponse.status, 200);
+    assert.match(await updatedAppResponse.text(), /Runtime updated/);
 
     const pageResponse = await fetch(origin + "/");
     assert.equal(pageResponse.status, 200);
