@@ -7,12 +7,14 @@ export interface JavafyConfig {
     port?: number;
   };
   publicDir?: string;
+  appDir?: string;
 }
 
 export const defaultConfig: Required<JavafyConfig> = {
   name: "Javafy App",
   dev: { host: "localhost", port: 3000 },
-  publicDir: "public"
+  publicDir: "public",
+  appDir: "src/app"
 };
 
 export function defineConfig(config: JavafyConfig): JavafyConfig {
@@ -26,8 +28,11 @@ export function resolveConfig(config: JavafyConfig = {}): Required<JavafyConfig>
       host: config.dev?.host ?? defaultConfig.dev.host,
       port: config.dev?.port ?? defaultConfig.dev.port
     },
-    publicDir: config.publicDir ?? defaultConfig.publicDir
+    publicDir: config.publicDir ?? defaultConfig.publicDir,
+    appDir: config.appDir ?? defaultConfig.appDir
   };
 }
 
-export const JAVAFY_VERSION = "0.2.0";
+export { matchRoute, type RouteDefinition, type RouteMatch } from "./router.js";
+
+export const JAVAFY_VERSION = "0.3.0";
