@@ -312,8 +312,8 @@ async function dev(): Promise<void> {
             }));
             moduleGraph = createModuleGraph(result.metafile, root);
             for (const client of clients) {
-              client.write("event: build-success\\ndata: ready\\n\\n");
-              client.write("event: hmr\\ndata: updated\\n\\n");
+              client.write("event: build-success\ndata: ready\n\n");
+              client.write("event: hmr\ndata: updated\n\n");
             }
             console.log("  Javafy: application rebuilt");
           });
