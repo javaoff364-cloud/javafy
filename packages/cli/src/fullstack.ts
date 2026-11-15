@@ -183,13 +183,29 @@ export async function renderFullstackPage(
     return { html: renderToString(notFound), props: {}, status: 404 };
   }
   const page = matched.route;
+  if (page.path.includes(":") && page.getStaticPaths && !page.getServerSideProps) {
+    const staticEntries = await page.getStaticPaths();
+    const allowed = staticEntries.some((entry) => {
+      let generatedPath = page.path;
+      for (const [key, value] of Object.entries(entry.params)) {
+        generatedPath = generatedPath.replace(":" + key, encodeURIComponent(value));
+      }
+      return generatedPath === matched.pathname;
+    });
+    if (!allowed) {
+      const notFound = manifest.notFound
+        ? createElement(manifest.notFound, { params: matched.params, pathname: matched.pathname })
+        : createElement("main", null, createElement("h1", null, "404 — Page not found"));
+      return { html: renderToString(notFound), props: {}, status: 404 };
+    }
+  }
   const context: DataContext = {
     params: matched.params,
     pathname: matched.pathname,
     ...(options.request ? { request: options.request, searchParams: new URL(options.request.url).searchParams } : {})
   };
   let props: Record<string, unknown> = {};
-  const loader = options.static ? page.getStaticProps : page.getServerSideProps;
+  const loader = options.static ? page.getStaticProps : page.getServerSideProps ?? page.getStaticProps;
   if (loader) {
     const result = await loader(context);
     if (result && typeof result === "object") props = result;
