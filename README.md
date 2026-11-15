@@ -8,7 +8,8 @@ Javafy is a performance-first TypeScript fullstack framework ecosystem for build
 
 ## Current status
 
-**Version:** 0.3.0 — File-based Router
+**Stable foundation:** 0.3.0 — File-based Router  
+**In development:** 0.4.0 — Fullstack Engine
 
 Available now:
 - TypeScript and TSX bundling through esbuild.
@@ -20,8 +21,9 @@ Available now:
 - Client-side navigation with `Link` and `useRouter`.
 - Development server with automatic rebuild and browser live reload.
 - Production JavaScript bundle and SPA fallback file (`dist/_redirects`).
+- New `@javafy/server` API dispatcher foundation with typed Web Request/Response handlers.
 
-The current router is client-side. Server-side rendering, API routes, and static pre-rendering are not included in 0.3.0.
+The 0.4.0 API dispatcher is currently a runtime primitive. Automatic `src/app/api/**/route.ts` discovery, CLI server integration, SSR, and SSG are still being implemented.
 
 ## Requirements
 
@@ -105,6 +107,29 @@ export function Navigation() {
 ```
 
 `useRouter()` exposes `pathname`, `params`, `navigate()`, `back()`, and `forward()`. `Link` performs same-origin client-side navigation while preserving normal browser behavior for modified clicks and external URLs.
+
+## API router foundation (0.4.0)
+
+The new `@javafy/server` package provides a Web-standard API dispatcher. It supports static and dynamic route patterns, typed request handlers, JSON responses, automatic `OPTIONS`, `HEAD` fallback, 404/405 responses, and handler error isolation.
+
+```ts
+import { createApiRouter } from "@javafy/server";
+
+const api = createApiRouter([
+  {
+    path: "/api/health",
+    GET: () => Response.json({ ok: true })
+  },
+  {
+    path: "/api/users/:id",
+    GET: (_request, { params }) => Response.json({ id: params.id })
+  }
+]);
+
+const response = await api(new Request("http://localhost/api/users/42"));
+```
+
+This is the dispatcher API only; the CLI's automatic route-file loading is not yet part of this milestone.
 
 ## Production build
 
