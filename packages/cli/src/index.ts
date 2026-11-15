@@ -1,11 +1,15 @@
 #!/usr/bin/env node
-import { createServer, type ServerResponse } from "node:http";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import {
   cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync,
   statSync, writeFileSync
 } from "node:fs";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { createElement } from "react";
+import { renderToString } from "react-dom/server";
+import { createApiRouter } from "@javafy/server";
+import { buildFullstackManifest, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "./fullstack.js";
 import {
   build as esbuild, context as createBuildContext,
   type BuildResult, type Plugin
@@ -151,7 +155,7 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
 
         const source = [
           'import React, { createElement } from "react";',
-          'import { createRoot } from "react-dom/client";',
+          'import { hydrateRoot } from "react-dom/client";',
           'import { createRouter } from "@javafy/router";',
           ...[...imports.entries()].map(([file, name]) =>
             `import ${name} from ${JSON.stringify(file)};`
@@ -161,14 +165,14 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
           ...discovered.routes.map((route) => {
             const page = importFor(route.page);
             const layouts = route.layouts.map(importFor);
-            return `    { path: ${JSON.stringify(route.path)}, component: ${page}, layouts: [${layouts.join(", ")}] },`;
+            return `    { path: ${JSON.stringify(route.path)}, component: ${page}, layouts: [${layouts.join(", ")}], props: window.__JAVAFY_DATA__?.[window.location.pathname] ?? {} },`;
           }),
           "  ],",
           ...(discovered.notFound ? [`  notFound: ${importFor(discovered.notFound)},`] : []),
           "});",
           'const root = document.getElementById("root");',
           'if (!root) throw new Error("Javafy: #root element was not found.");',
-          "createRoot(root).render(createElement(Router));"
+          "hydrateRoot(root, createElement(Router));"
         ].join("\n");
 
         return {
