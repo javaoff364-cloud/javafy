@@ -4,7 +4,7 @@ import {
   cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync,
   statSync, writeFileSync
 } from "node:fs";
-import { extname, join, normalize, resolve, sep } from "node:path";
+import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
@@ -456,6 +456,85 @@ async function build(): Promise<void> {
   if (entryConfig.usesRouter) console.log("Javafy: client-side routes enabled; SPA fallback written to dist/_redirects");
 }
 
+async function start(): Promise<void> {
+  const config = resolveConfig(await loadConfig());
+  const root = process.cwd();
+  const output = resolve(root, "dist");
+  const manifestFile = join(output, "server", "manifest.js");
+  if (!existsSync(manifestFile)) {
+    console.error("Javafy: production server manifest not found. Run javafy build first.");
+    process.exitCode = 1;
+    return;
+  }
+  const manifest = await loadFullstackManifest(manifestFile);
+  const apiHandler = createApiRouter(manifest.apiRoutes);
+  const port = Number(process.env.PORT ?? config.dev.port);
+  const host = process.env.HOST ?? config.dev.host;
+
+  const server = createServer(async (request, response) => {
+    let pathname: string;
+    try {
+      pathname = decodeURIComponent((request.url ?? "/").split("?")[0] ?? "/");
+    } catch {
+      sendText(response, 400, "Bad request");
+      return;
+    }
+
+    if (pathname === "/api" || pathname.startsWith("/api/")) {
+      try {
+        await sendWebResponse(await apiHandler(await toWebRequest(request)), response);
+      } catch (error) {
+        sendText(response, 500, error instanceof Error ? error.message : "Internal server error");
+      }
+      return;
+    }
+
+    const relative = normalize(pathname).replace(/^([/\\\\])+/, "") || "index.html";
+    let target = resolve(output, relative);
+    if (target !== output && !target.startsWith(output + sep)) {
+      sendText(response, 403, "Forbidden");
+      return;
+    }
+    if (existsSync(target) && statSync(target).isDirectory()) target = join(target, "index.html");
+    if (!extname(pathname) && !existsSync(target)) target = join(target, "index.html");
+
+    if (existsSync(target) && statSync(target).isFile()) {
+      response.writeHead(200, {
+        "content-type": mimeTypes[extname(target)] ?? "application/octet-stream"
+      });
+      response.end(readFileSync(target));
+      return;
+    }
+
+    if (!extname(pathname)) {
+      try {
+        const webRequest = await toWebRequest(request);
+        const rendered = await renderFullstackPage(manifest, pathname, { request: webRequest });
+        if (!rendered) {
+          sendText(response, 404, "Javafy: page not found.");
+          return;
+        }
+        const shell = getHtml(root) ?? '<!doctype html><html><head><meta charset="utf-8"></head><body><div id="root"></div></body></html>';
+        const document = renderHtmlDocument(shell, rendered.html, pathname, rendered.props, "/assets/app.js");
+        response.writeHead(rendered.status, { "content-type": "text/html; charset=utf-8" });
+        response.end(document);
+        return;
+      } catch (error) {
+        sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");
+        return;
+      }
+    }
+
+    sendText(response, 404, "Javafy: file not found.");
+  });
+
+  server.listen(port, host, () => {
+    console.log("\\n  Javafy production server: http://" + host + ":" + port + "\\n");
+    console.log("  API routes: enabled");
+    console.log("  Server-side rendering: enabled");
+  });
+}
+
 async function main(): Promise<void> {
   if (command === "--help" || command === "help") return help();
   if (command === "--version" || command === "-v") {
@@ -464,6 +543,7 @@ async function main(): Promise<void> {
   }
   if (command === "dev") return dev();
   if (command === "build") return build();
+  if (command === "start") return start();
   console.error(`Unknown command: ${command}\n`);
   help();
   process.exitCode = 1;
