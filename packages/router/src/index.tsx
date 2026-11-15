@@ -45,6 +45,10 @@ export function navigate(to: string, options: { replace?: boolean } = {}): void 
     window.location.assign(url.href);
     return;
   }
+  if ((window as Window & { __JAVAFY_FULLSTACK__?: boolean }).__JAVAFY_FULLSTACK__) {
+    window.location.assign(url.href);
+    return;
+  }
   if (options.replace) window.history.replaceState({}, "", url);
   else window.history.pushState({}, "", url);
   window.dispatchEvent(new Event(NAVIGATION_EVENT));
