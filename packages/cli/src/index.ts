@@ -263,6 +263,7 @@ async function dev(): Promise<void> {
   const clients = new Set<ServerResponse>();
   let bundle = "";
   let buildErrors = false;
+  let currentBuildErrorPayload = "[]";
   let moduleGraph = { modules: [] as Array<{ id: string; imports: string[] }> };
 
   if (!entryConfig.usesRouter && !existsSync(entryConfig.entry)) {
@@ -283,16 +284,18 @@ async function dev(): Promise<void> {
             buildErrors = result.errors.length > 0;
             if (buildErrors) {
               const payload = serializeBuildErrors(result.errors);
-              for (const client of clients) client.write("event: build-error\\ndata: " + payload + "\\n\\n");
+              currentBuildErrorPayload = payload;
+              for (const client of clients) client.write("event: build-error\ndata: " + payload + "\n\n");
               console.error("Javafy: compilation failed");
               for (const error of result.errors) console.error(error.text);
               return;
             }
+            currentBuildErrorPayload = "[]";
             if (result.outputFiles?.[0]) bundle = result.outputFiles[0].text;
             moduleGraph = createModuleGraph(result.metafile, root);
             for (const client of clients) {
-              client.write("event: build-success\\ndata: ready\\n\\n");
-              client.write("event: reload\\ndata: updated\\n\\n");
+              client.write("event: build-success\ndata: ready\n\n");
+              client.write("event: reload\ndata: updated\n\n");
             }
             console.log("  Javafy: application rebuilt");
           });
@@ -371,6 +374,7 @@ async function dev(): Promise<void> {
       });
       response.write("event: connected\ndata: ready\n\n");
       clients.add(response);
+      if (buildErrors) response.write("event: build-error\ndata: " + currentBuildErrorPayload + "\n\n");
       request.on("close", () => clients.delete(response));
       return;
     }
@@ -603,7 +607,7 @@ async function start(): Promise<void> {
   });
 
   server.listen(port, host, () => {
-    console.log("\\n  Javafy production server: http://" + host + ":" + port + "\\n");
+    console.log("\n  Javafy production server: http://" + host + ":" + port + "\n");
     console.log("  API routes: enabled");
     console.log("  Server-side rendering: enabled");
   });
