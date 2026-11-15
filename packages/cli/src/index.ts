@@ -322,7 +322,6 @@ async function dev(): Promise<void> {
     ],
     bundle: true,
     write: false,
-    outfile: "app.js",
     platform: "browser",
     format: "esm",
     target: ["es2022"],
