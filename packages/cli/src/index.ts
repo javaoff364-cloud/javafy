@@ -233,11 +233,13 @@ function renderHtmlDocument(
     "<script>window.__JAVAFY_DATA__=" + data + ";</script>",
     liveReload ? '<script>const events=new EventSource("/__javafy/events");events.addEventListener("reload",()=>location.reload());</script>' : "",
     '<script type="module" src="' + scriptPath + '"></script>'
-  ].filter(Boolean).join("\\n");
+  ].filter(Boolean).join(String.fromCharCode(10));
   const root = '<div id="root">' + body + "</div>";
-  const withRoot = shell.replace(/<div\\s+id=["']root["']\\s*>\\s*<\\/div>/i, root);
+  const withRoot = shell.includes('<div id="root"></div>')
+    ? shell.replace('<div id="root"></div>', root)
+    : shell.replace("</body>", root + "</body>");
   return withRoot.includes("</body>")
-    ? withRoot.replace("</body>", scripts + "\\n</body>")
+    ? withRoot.replace("</body>", scripts + String.fromCharCode(10) + "</body>")
     : withRoot + scripts;
 }
 
