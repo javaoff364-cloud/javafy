@@ -278,8 +278,8 @@ async function dev(): Promise<void> {
     absWorkingDir: root,
     entryPoints: {
       app: entryConfig.entryPoints[0],
-      "vendor/react-dom-client": "react-dom/client",
-      "vendor/react-refresh": "react-refresh/runtime"
+      "react-dom-client": "react-dom/client",
+      "react-refresh": "react-refresh/runtime"
     },
     outdir: devOutputDirectory,
     entryNames: "[name]",
