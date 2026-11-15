@@ -56,7 +56,7 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
     const client = await clientResponse.text();
     assert.match(client, /javafy-error-overlay/);
     assert.match(client, /build-error/);
-    assert.match(client, /addEventListener\\("hmr"/);
+    assert.ok(client.includes('addEventListener("hmr"'));
 
     const preambleResponse = await fetch(origin + "/__javafy/refresh-preamble.js");
     assert.equal(preambleResponse.status, 200);
