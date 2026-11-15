@@ -496,7 +496,7 @@ async function start(): Promise<void> {
   const config = resolveConfig(await loadConfig());
   const root = process.cwd();
   const output = resolve(root, "dist");
-  const manifestFile = join(output, "server", "manifest.js");
+  const manifestFile = join(output, "server", "manifest.mjs");
   if (!existsSync(manifestFile)) {
     console.error("Javafy: production server manifest not found. Run javafy build first.");
     process.exitCode = 1;
