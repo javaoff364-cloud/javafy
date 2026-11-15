@@ -48,6 +48,7 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
   const root = mkdtempSync(join(process.cwd(), ".javafy-fullstack-integration-"));
   const app = join(root, "src", "app");
   mkdirSync(join(app, "posts", "[slug]"), { recursive: true });
+  mkdirSync(join(app, "static", "[slug]"), { recursive: true });
   mkdirSync(join(app, "api", "posts", "[id]"), { recursive: true });
   writeFileSync(join(app, "layout.tsx"), `
     export default function Layout({ children }) {
@@ -60,6 +61,11 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     }
     export async function getServerSideProps({ params }) {
       return { title: "SSR: " + params.slug };
+    }
+  `);
+  writeFileSync(join(app, "static", "[slug]", "page.tsx"), `
+    export default function StaticPage({ params, title }) {
+      return <article><h1>{title}</h1><p>{params.slug}</p></article>;
     }
     export async function getStaticPaths() {
       return [{ params: { slug: "prebuilt" } }];
@@ -91,8 +97,8 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     assert.match(serverPage.html, /SSR: hello/);
     assert.match(serverPage.html, /Fixture layout/);
 
-    assert.deepEqual(await getStaticRoutePaths(manifest), ["/posts/prebuilt"]);
-    const staticPage = await renderFullstackPage(manifest, "/posts/prebuilt", { static: true });
+    assert.deepEqual(await getStaticRoutePaths(manifest), ["/static/prebuilt"]);
+    const staticPage = await renderFullstackPage(manifest, "/static/prebuilt", { static: true });
     assert.equal(staticPage.status, 200);
     assert.match(staticPage.html, /SSG: prebuilt/);
 
