@@ -20,5 +20,7 @@ jobs:
         run: npm install
       - name: TypeScript build
         run: npm run build
+      - name: Example typecheck
+        run: npm run typecheck:example
       - name: Example production build
         run: npm run build:example
