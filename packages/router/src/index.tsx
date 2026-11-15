@@ -15,6 +15,7 @@ import { matchRoute, type RouteDefinition } from "@javafy/core";
 export interface JavafyPageProps {
   params: Record<string, string>;
   pathname: string;
+  [key: string]: unknown;
 }
 
 export interface JavafyLayoutProps extends JavafyPageProps {
@@ -24,6 +25,7 @@ export interface JavafyLayoutProps extends JavafyPageProps {
 export interface JavafyRoute extends RouteDefinition {
   component: ComponentType<JavafyPageProps>;
   layouts?: ComponentType<JavafyLayoutProps>[];
+  props?: Record<string, unknown>;
 }
 
 export interface JavafyRouterValue extends JavafyPageProps {
@@ -40,6 +42,10 @@ export function navigate(to: string, options: { replace?: boolean } = {}): void 
   if (typeof window === "undefined") return;
   const url = new URL(to, window.location.href);
   if (url.origin !== window.location.origin) {
+    window.location.assign(url.href);
+    return;
+  }
+  if ((window as Window & { __JAVAFY_FULLSTACK__?: boolean }).__JAVAFY_FULLSTACK__) {
     window.location.assign(url.href);
     return;
   }
@@ -89,10 +95,11 @@ export function Link({
 export function createRouter(options: {
   routes: JavafyRoute[];
   notFound?: ComponentType<JavafyPageProps>;
+  initialPathname?: string;
 }): ComponentType {
   const Router = function JavafyRouter() {
     const [pathname, setPathname] = useState(
-      typeof window === "undefined" ? "/" : window.location.pathname
+      options.initialPathname ?? (typeof window === "undefined" ? "/" : window.location.pathname)
     );
 
     useEffect(() => {
@@ -112,7 +119,7 @@ export function createRouter(options: {
     const params = matched?.params ?? {};
     const route = matched?.route;
     const page = route
-      ? createElement(route.component, { params, pathname })
+      ? createElement(route.component, { ...(route.props ?? {}), params, pathname })
       : options.notFound
         ? createElement(options.notFound, { params, pathname })
         : createElement("main", null,

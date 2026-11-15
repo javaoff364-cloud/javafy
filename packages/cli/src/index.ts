@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-import { createServer, type ServerResponse } from "node:http";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import {
-  cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync,
-  statSync, writeFileSync
+  cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync,
+  watch, writeFileSync
 } from "node:fs";
-import { extname, join, normalize, resolve, sep } from "node:path";
+import { dirname, extname, join, normalize, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { createApiRouter } from "@javafy/server";
+import { buildFullstackManifest, discoverFullstackFiles, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "./fullstack.js";
 import {
   build as esbuild, context as createBuildContext,
   type BuildResult, type Plugin
@@ -24,6 +26,7 @@ Usage:
 Commands:
   dev       Start the development server with routing and live reload
   build     Build the application for production
+  start     Start the production SSR/API server
   --version Show the current version
   --help    Show this help message
 
@@ -151,7 +154,7 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
 
         const source = [
           'import React, { createElement } from "react";',
-          'import { createRoot } from "react-dom/client";',
+          'import { hydrateRoot } from "react-dom/client";',
           'import { createRouter } from "@javafy/router";',
           ...[...imports.entries()].map(([file, name]) =>
             `import ${name} from ${JSON.stringify(file)};`
@@ -161,14 +164,14 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
           ...discovered.routes.map((route) => {
             const page = importFor(route.page);
             const layouts = route.layouts.map(importFor);
-            return `    { path: ${JSON.stringify(route.path)}, component: ${page}, layouts: [${layouts.join(", ")}] },`;
+            return `    { path: ${JSON.stringify(route.path)}, component: ${page}, layouts: [${layouts.join(", ")}], props: window.__JAVAFY_DATA__?.[window.location.pathname] ?? {} },`;
           }),
           "  ],",
           ...(discovered.notFound ? [`  notFound: ${importFor(discovered.notFound)},`] : []),
           "});",
           'const root = document.getElementById("root");',
           'if (!root) throw new Error("Javafy: #root element was not found.");',
-          "createRoot(root).render(createElement(Router));"
+          "hydrateRoot(root, createElement(Router));"
         ].join("\n");
 
         return {
@@ -193,11 +196,69 @@ function entryOptions(root: string, appDir: string) {
   };
 }
 
+async function toWebRequest(request: IncomingMessage): Promise<Request> {
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(request.headers)) {
+    if (Array.isArray(value)) value.forEach((item) => headers.append(name, item));
+    else if (value !== undefined) headers.set(name, value);
+  }
+  const method = (request.method ?? "GET").toUpperCase();
+  const chunks: Buffer[] = [];
+  if (method !== "GET" && method !== "HEAD") {
+    for await (const chunk of request) chunks.push(Buffer.from(chunk));
+  }
+  const body = chunks.length ? Buffer.concat(chunks) : undefined;
+  const host = request.headers.host ?? "localhost";
+  const init: RequestInit = { method, headers };
+  if (body) init.body = body as unknown as BodyInit;
+  return new Request("http://" + host + (request.url ?? "/"), init);
+}
+
+async function sendWebResponse(response: Response, target: ServerResponse): Promise<void> {
+  target.writeHead(response.status, Object.fromEntries(response.headers.entries()));
+  target.end(Buffer.from(await response.arrayBuffer()));
+}
+
+function renderHtmlDocument(
+  shell: string,
+  body: string,
+  pathname: string,
+  props: Record<string, unknown>,
+  scriptPath: string,
+  liveReload = false
+): string {
+  const data = JSON.stringify({ [pathname]: props }).replace(/</g, "\\u003c");
+  const scripts = [
+    "<script>window.__JAVAFY_FULLSTACK__=true;window.__JAVAFY_DATA__=" + data + ";</script>",
+    liveReload ? '<script>const events=new EventSource("/__javafy/events");events.addEventListener("reload",()=>location.reload());</script>' : "",
+    '<script type="module" src="' + scriptPath + '"></script>'
+  ].filter(Boolean).join("\n");
+  const root = '<div id="root">' + body + "</div>";
+  const rootPattern = /<div\b(?=[^>]*\bid=["']root["'])[^>]*>\s*<\/div>/i;
+  const withRoot = rootPattern.test(shell)
+    ? shell.replace(rootPattern, root)
+    : shell.includes("</body>")
+      ? shell.replace("</body>", root + "</body>")
+      : shell + root;
+  return withRoot.includes("</body>")
+    ? withRoot.replace("</body>", scripts + String.fromCharCode(10) + "</body>")
+    : withRoot + scripts;
+}
+
+function sendText(response: ServerResponse, status: number, message: string): void {
+  response.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
+  response.end(message);
+}
+
 async function dev(): Promise<void> {
   const config = resolveConfig(await loadConfig());
   const root = process.cwd();
   const appDir = resolve(root, config.appDir);
   const entryConfig = entryOptions(root, appDir);
+  const manifestFile = resolve(root, ".javafy/server-manifest.mjs");
+  await buildFullstackManifest(root, appDir, manifestFile);
+  let manifest = await loadFullstackManifest(manifestFile);
+  let apiHandler = createApiRouter(manifest.apiRoutes);
   const clients = new Set<ServerResponse>();
   let bundle = "";
   let buildErrors = false;
@@ -244,7 +305,36 @@ async function dev(): Promise<void> {
   await context.rebuild();
   await context.watch();
 
-  const server = createServer((request, response) => {
+  // Keep server-side route modules in sync while the dev server is running.
+  const manifestWatchers = new Map<string, ReturnType<typeof watch>>();
+  let manifestReloadTimer: ReturnType<typeof setTimeout> | undefined;
+  const syncManifestWatchers = () => {
+    for (const directory of discoverFullstackFiles(appDir).watchDirs) {
+      if (manifestWatchers.has(directory)) continue;
+      try {
+        const watcher = watch(directory, () => {
+          if (manifestReloadTimer) clearTimeout(manifestReloadTimer);
+          manifestReloadTimer = setTimeout(async () => {
+            try {
+              await buildFullstackManifest(root, appDir, manifestFile);
+              manifest = await loadFullstackManifest(manifestFile);
+              apiHandler = createApiRouter(manifest.apiRoutes);
+              syncManifestWatchers();
+              console.log("  Javafy: server routes refreshed");
+            } catch (error) {
+              console.error("Javafy: server route rebuild failed", error);
+            }
+          }, 100);
+        });
+        manifestWatchers.set(directory, watcher);
+      } catch (error) {
+        console.warn("Javafy: could not watch " + directory, error);
+      }
+    }
+  };
+  syncManifestWatchers();
+
+  const server = createServer(async (request, response) => {
     const rawUrl = request.url ?? "/";
     if (rawUrl === "/__javafy/events") {
       response.writeHead(200, {
@@ -269,9 +359,19 @@ async function dev(): Promise<void> {
 
     let pathname: string;
     try {
-      pathname = decodeURIComponent(rawUrl.split("?")[0] ?? "/");
+      pathname = new URL(rawUrl, "http://localhost").pathname;
     } catch {
       response.writeHead(400).end("Bad request");
+      return;
+    }
+
+    if (pathname === "/api" || pathname.startsWith("/api/")) {
+      try {
+        const webRequest = await toWebRequest(request);
+        await sendWebResponse(await apiHandler(webRequest), response);
+      } catch (error) {
+        sendText(response, 500, error instanceof Error ? error.message : "Internal server error");
+      }
       return;
     }
 
@@ -284,26 +384,6 @@ async function dev(): Promise<void> {
       return;
     }
 
-    if (
-      entryConfig.usesRouter &&
-      (pathname === "/" || pathname.endsWith(".html") || !extname(pathname))
-    ) {
-      const html = getHtml(root) ?? getHtml(publicRoot);
-      if (html) {
-        const liveReload = `<script>
-const javafyEvents = new EventSource("/__javafy/events");
-javafyEvents.addEventListener("reload", () => location.reload());
-</script>
-<script type="module" src="/@javafy/app.js"></script>`;
-        const injected = html.includes("</body>")
-          ? html.replace("</body>", liveReload + "\n</body>")
-          : html + liveReload;
-        response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-        response.end(injected);
-        return;
-      }
-    }
-
     if (existsSync(target) && statSync(target).isDirectory()) target = join(target, "index.html");
     if (existsSync(target) && statSync(target).isFile()) {
       response.writeHead(200, {
@@ -313,24 +393,22 @@ javafyEvents.addEventListener("reload", () => location.reload());
       return;
     }
 
-    // Client-side routes share the app shell; asset requests still receive a 404.
     if (entryConfig.usesRouter && !extname(pathname)) {
       const html = getHtml(root) ?? getHtml(publicRoot);
       if (html) {
-        const liveReload = `<script>
-const javafyEvents = new EventSource("/__javafy/events");
-javafyEvents.addEventListener("reload", () => location.reload());
-</script>
-<script type="module" src="/@javafy/app.js"></script>`;
-        const injected = html.includes("</body>")
-          ? html.replace("</body>", liveReload + "\n</body>")
-          : html + liveReload;
-        response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-        response.end(injected);
-        return;
+        try {
+          const webRequest = await toWebRequest(request);
+          const rendered = await renderFullstackPage(manifest, pathname, { request: webRequest });
+          const document = renderHtmlDocument(html, rendered?.html ?? "", pathname, rendered?.props ?? {}, "/@javafy/app.js", true);
+          response.writeHead(rendered ? rendered.status : 404, { "content-type": "text/html; charset=utf-8" });
+          response.end(document);
+          return;
+        } catch (error) {
+          sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");
+          return;
+        }
       }
     }
-
     response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
     response.end("Javafy: file not found.");
   });
@@ -344,6 +422,8 @@ javafyEvents.addEventListener("reload", () => location.reload());
 
   const shutdown = async () => {
     server.close();
+    for (const watcher of manifestWatchers.values()) watcher.close();
+    if (manifestReloadTimer) clearTimeout(manifestReloadTimer);
     await context.dispose();
     process.exit(0);
   };
@@ -369,14 +449,8 @@ async function build(): Promise<void> {
   mkdirSync(output, { recursive: true });
   if (existsSync(publicRoot)) cpSync(publicRoot, output, { recursive: true });
 
-  const html = getHtml(root) ?? getHtml(publicRoot);
-  if (html) {
-    const productionHtml = html.replace(
-      "</body>",
-      '<script type="module" src="/assets/app.js"></script>\n</body>'
-    );
-    writeFileSync(join(output, "index.html"), productionHtml);
-  }
+  const html = getHtml(root) ?? getHtml(publicRoot) ??
+    '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="root"></div></body></html>';
 
   await esbuild({
     absWorkingDir: root,
@@ -393,12 +467,110 @@ async function build(): Promise<void> {
     jsx: "automatic"
   });
 
+  const manifestFile = join(output, "server", "manifest.mjs");
+  await buildFullstackManifest(root, appDir, manifestFile);
+  writeFileSync(join(output, "server", "shell.html"), html);
+
   if (entryConfig.usesRouter) {
+    const manifest = await loadFullstackManifest(manifestFile);
+    const staticPaths = await getStaticRoutePaths(manifest);
+    for (const pathname of staticPaths) {
+      const rendered = await renderFullstackPage(manifest, pathname, { static: true });
+      if (!rendered) continue;
+      const document = renderHtmlDocument(html, rendered.html, pathname, rendered.props, "/assets/app.js");
+      const relative = pathname === "/" ? "index.html" : join(pathname.replace(/^\//, ""), "index.html");
+      const destination = join(output, relative);
+      mkdirSync(dirname(destination), { recursive: true });
+      writeFileSync(destination, document);
+      console.log("  SSG: " + pathname);
+    }
     writeFileSync(join(output, "_redirects"), "/* /index.html 200\n");
+  } else if (html) {
+    writeFileSync(join(output, "index.html"), html.replace("</body>", '<script type="module" src="/assets/app.js"></script>\n</body>'));
   }
 
   console.log("Javafy: production build created in dist/");
   if (entryConfig.usesRouter) console.log("Javafy: client-side routes enabled; SPA fallback written to dist/_redirects");
+}
+
+async function start(): Promise<void> {
+  const config = resolveConfig(await loadConfig());
+  const root = process.cwd();
+  const output = resolve(root, "dist");
+  const manifestFile = join(output, "server", "manifest.mjs");
+  if (!existsSync(manifestFile)) {
+    console.error("Javafy: production server manifest not found. Run javafy build first.");
+    process.exitCode = 1;
+    return;
+  }
+  const manifest = await loadFullstackManifest(manifestFile);
+  const apiHandler = createApiRouter(manifest.apiRoutes);
+  const port = Number(process.env.PORT ?? config.dev.port);
+  const host = process.env.HOST ?? config.dev.host;
+
+  const server = createServer(async (request, response) => {
+    let pathname: string;
+    try {
+      pathname = new URL(request.url ?? "/", "http://localhost").pathname;
+    } catch {
+      sendText(response, 400, "Bad request");
+      return;
+    }
+
+    if (pathname === "/api" || pathname.startsWith("/api/")) {
+      try {
+        await sendWebResponse(await apiHandler(await toWebRequest(request)), response);
+      } catch (error) {
+        sendText(response, 500, error instanceof Error ? error.message : "Internal server error");
+      }
+      return;
+    }
+
+    const relative = normalize(pathname).replace(/^([/\\\\])+/, "") || "index.html";
+    let target = resolve(output, relative);
+    if (target !== output && !target.startsWith(output + sep)) {
+      sendText(response, 403, "Forbidden");
+      return;
+    }
+    if (existsSync(target) && statSync(target).isDirectory()) target = join(target, "index.html");
+    if (pathname === "/" && !existsSync(target)) target = join(output, "index.html");
+
+    if (existsSync(target) && statSync(target).isFile()) {
+      response.writeHead(200, {
+        "content-type": mimeTypes[extname(target)] ?? "application/octet-stream"
+      });
+      response.end(readFileSync(target));
+      return;
+    }
+
+    if (!extname(pathname)) {
+      try {
+        const webRequest = await toWebRequest(request);
+        const rendered = await renderFullstackPage(manifest, pathname, { request: webRequest });
+        if (!rendered) {
+          sendText(response, 404, "Javafy: page not found.");
+          return;
+        }
+        const shellFile = join(output, "server", "shell.html");
+        const shell = existsSync(shellFile) ? readFileSync(shellFile, "utf8") : getHtml(root) ?? '<!doctype html><html><head><meta charset="utf-8"></head><body><div id="root"></div></body></html>';
+        const document = renderHtmlDocument(shell, rendered.html, pathname, rendered.props, "/assets/app.js");
+        response.writeHead(rendered.status, { "content-type": "text/html; charset=utf-8" });
+        response.end(document);
+        return;
+      } catch (error) {
+        sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");
+        return;
+      }
+    }
+
+    sendText(response, 404, "Javafy: file not found.");
+  });
+
+  server.listen(port, host, () => {
+    console.log("\\n  Javafy production server: http://" + host + ":" + port + "\\n");
+    console.log("  API routes: enabled");
+    console.log("  Server-side rendering: enabled");
+  });
 }
 
 async function main(): Promise<void> {
@@ -409,6 +581,7 @@ async function main(): Promise<void> {
   }
   if (command === "dev") return dev();
   if (command === "build") return build();
+  if (command === "start") return start();
   console.error(`Unknown command: ${command}\n`);
   help();
   process.exitCode = 1;

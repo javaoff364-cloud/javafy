@@ -1,25 +1,14 @@
 {
   "name": "@javafy/router",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "File-based React router for Javafy applications.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
   "files": ["dist"],
-  "dependencies": {
-    "@javafy/core": "0.3.0"
-  },
-  "peerDependencies": {
-    "react": "^19.0.0"
-  },
-  "scripts": {
-    "build": "tsc -b"
-  }
+  "dependencies": { "@javafy/core": "0.4.0" },
+  "peerDependencies": { "react": "^19.0.0" },
+  "scripts": { "build": "tsc -b" }
 }
