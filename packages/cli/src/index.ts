@@ -401,7 +401,7 @@ async function dev(): Promise<void> {
       response.write("event: connected\ndata: ready\n\n");
       clients.add(response);
       if (buildErrors) response.write("event: build-error\ndata: " + currentBuildErrorPayload + "\n\n");
-      request.on("close", () => clients.delete(response));
+      response.on("close", () => clients.delete(response));
       return;
     }
 
