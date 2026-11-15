@@ -15,7 +15,8 @@
     "test": "node --test",
     "dev": "node packages/cli/dist/index.js dev",
     "dev:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js dev",
-    "build:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js build"
+    "build:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js build",
+    "typecheck:example": "tsc --noEmit -p examples/hello-world/tsconfig.json"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
