@@ -383,6 +383,15 @@ async function dev(): Promise<void> {
       return;
     }
 
+    if (rawUrl.split("?")[0] === "/__javafy/assets") {
+      response.writeHead(200, {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store"
+      });
+      response.end(JSON.stringify([...devOutputFiles.keys()]));
+      return;
+    }
+
     if (rawUrl.split("?")[0] === "/__javafy/module-graph") {
       response.writeHead(200, {
         "content-type": "application/json; charset=utf-8",
