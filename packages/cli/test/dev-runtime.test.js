@@ -4,7 +4,6 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { createServer } from "node:net";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,7 +19,7 @@ async function getFreePort() {
 }
 
 test("dev server exposes the browser diagnostics client and module graph", { timeout: 20000 }, async () => {
-  const root = mkdtempSync(join(tmpdir(), "javafy-dev-runtime-"));
+  const root = mkdtempSync(join(process.cwd(), ".javafy-dev-runtime-"));
   const app = join(root, "src", "app");
   mkdirSync(app, { recursive: true });
   writeFileSync(join(root, "index.html"), "<!doctype html><html><body><div id=\"root\"></div></body></html>");
