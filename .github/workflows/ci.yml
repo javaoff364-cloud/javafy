@@ -18,5 +18,7 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
-      - name: Build packages
+      - name: TypeScript build
         run: npm run build
+      - name: Example production build
+        run: npm run build:example
