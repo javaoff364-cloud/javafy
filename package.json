@@ -1,6 +1,6 @@
 {
   "name": "javafy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A high-performance TypeScript fullstack framework.",
   "license": "MIT",
@@ -9,10 +9,11 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && node packages/cli/dist/index.js build",
     "clean": "tsc -b --clean",
     "typecheck": "tsc -b --pretty",
-    "test": "node --test"
+    "test": "node --test",
+    "dev": "node packages/cli/dist/index.js dev"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
@@ -22,5 +23,8 @@
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "esbuild": "^0.25.5"
+  }
 }
