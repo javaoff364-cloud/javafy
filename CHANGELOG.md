@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 — Fullstack Engine (in development)
+
+- Added the new `@javafy/server` package.
+- Added a typed Web Request/Response API dispatcher.
+- Added static and dynamic API route matching.
+- Added GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD method handling.
+- Added automatic OPTIONS responses, HEAD fallback, 404/405 responses, and handler error isolation.
+- Added API dispatcher tests for methods, parameters, request bodies, and error cases.
+
+Not yet included: automatic API route-file discovery, CLI HTTP server integration, SSR, SSG, and server-side page data loading.
+
 ## 0.3.0 — File-based Router
 
 - Added the `@javafy/router` package.
