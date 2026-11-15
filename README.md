@@ -166,6 +166,12 @@ Dynamic pages are prerendered for the parameter sets returned by `getStaticPaths
 
 Returned props are serialized into the HTML for hydration. Do not put secrets in page props.
 
+## Development diagnostics (0.5.0 preview)
+
+The 0.5.0 development runtime adds a browser compilation-error overlay and exposes the current esbuild module graph at `http://localhost:3000/__javafy/module-graph` while `javafy dev` is running. The endpoint returns JSON with module IDs and their internal imports.
+
+This is an early preview: successful rebuilds still trigger a full-page reload. React Fast Refresh and state-preserving HMR are not implemented yet.
+
 ## Navigation
 
 ```tsx
