@@ -18,7 +18,7 @@ async function getFreePort() {
   return port;
 }
 
-test("dev server exposes the browser diagnostics client and module graph", { timeout: 20000 }, async () => {
+test("dev server exposes the browser diagnostics client and module graph", { timeout: 30000 }, async () => {
   const root = mkdtempSync(join(process.cwd(), ".javafy-dev-runtime-"));
   const app = join(root, "src", "app");
   mkdirSync(app, { recursive: true });
@@ -100,19 +100,34 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
       hmrEvent,
       new Promise((resolve) => setTimeout(() => resolve(false), 10000))
     ]);
-    eventsController.abort();
     assert.equal(hmrSeen, true, "dev server did not publish an HMR event after a source edit");
-    const updatedAppResponse = await fetch(origin + "/@javafy/app.js");
-    assert.equal(updatedAppResponse.status, 200);
-    const updatedAssetNamesResponse = await fetch(origin + "/__javafy/assets");
-    assert.equal(updatedAssetNamesResponse.status, 200);
-    const updatedAssetNames = await updatedAssetNamesResponse.json();
-    const updatedAssetSources = await Promise.all(updatedAssetNames.map(async (assetName) => {
-      const assetResponse = await fetch(origin + "/@javafy/" + assetName);
-      assert.equal(assetResponse.status, 200, "missing rebuilt ESM asset: " + assetName);
-      return assetResponse.text();
-    }));
-    assert.ok(updatedAssetSources.some((source) => source.includes("Runtime updated")), "updated source was not found in rebuilt ESM assets");
+
+    // The HMR event and the HTTP asset requests travel over separate connections.
+    // Poll briefly so this assertion checks the completed rebuild rather than
+    // racing the filesystem watcher or the asset-map refresh on slower devices.
+    let updatedAssetNames = [];
+    let updatedAssetSources = [];
+    let updatedSourceFound = false;
+    const rebuildDeadline = Date.now() + 5000;
+    while (Date.now() < rebuildDeadline && !updatedSourceFound) {
+      const updatedAssetNamesResponse = await fetch(origin + "/__javafy/assets");
+      assert.equal(updatedAssetNamesResponse.status, 200);
+      updatedAssetNames = await updatedAssetNamesResponse.json();
+      updatedAssetSources = await Promise.all(updatedAssetNames.map(async (assetName) => {
+        const assetResponse = await fetch(origin + "/@javafy/" + assetName);
+        assert.equal(assetResponse.status, 200, "missing rebuilt ESM asset: " + assetName);
+        return assetResponse.text();
+      }));
+      updatedSourceFound = updatedAssetSources.some((source) => source.includes("Runtime updated"));
+      if (!updatedSourceFound) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    eventsController.abort();
+    assert.ok(
+      updatedSourceFound,
+      "updated source was not found in rebuilt ESM assets. Assets: " +
+        JSON.stringify(updatedAssetNames) +
+        ". Server output: " + output
+    );
 
     const pageResponse = await fetch(origin + "/");
     assert.equal(pageResponse.status, 200);

@@ -268,6 +268,14 @@ async function dev(): Promise<void> {
   let currentBuildErrorPayload = "[]";
   let moduleGraph = { modules: [] as Array<{ id: string; imports: string[] }> };
 
+  // Start the server only after esbuild's initial watch build has completed.
+  // Calling rebuild() and then watch() performs two builds; the second one can
+  // otherwise be mistaken for a user edit and emit a stale HMR update.
+  let resolveInitialWatchBuild!: () => void;
+  const initialWatchBuild = new Promise<void>((resolve) => {
+    resolveInitialWatchBuild = resolve;
+  });
+
   if (!entryConfig.usesRouter && !existsSync(entryConfig.entry)) {
     console.error("Javafy: src/main.tsx or a page in src/app/ was not found.");
     process.exitCode = 1;
@@ -300,6 +308,7 @@ async function dev(): Promise<void> {
               for (const client of clients) client.write("event: build-error\ndata: " + payload + "\n\n");
               console.error("Javafy: compilation failed");
               for (const error of result.errors) console.error(error.text);
+              resolveInitialWatchBuild();
               return;
             }
             currentBuildErrorPayload = "[]";
@@ -316,6 +325,7 @@ async function dev(): Promise<void> {
               client.write("event: hmr\ndata: updated\n\n");
             }
             console.log("  Javafy: application rebuilt");
+            resolveInitialWatchBuild();
           });
         }
       }
@@ -331,8 +341,8 @@ async function dev(): Promise<void> {
     metafile: true
   });
 
-  await context.rebuild();
   await context.watch();
+  await initialWatchBuild;
 
   // Keep server-side route modules in sync while the dev server is running.
   const manifestWatchers = new Map<string, ReturnType<typeof watch>>();
