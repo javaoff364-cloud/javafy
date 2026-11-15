@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { discoverFullstackFiles, getStaticRoutePaths } from "../dist/fullstack.js";
+import { buildFullstackManifest, discoverFullstackFiles, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "../dist/fullstack.js";
 
 test("discovers page, nested layout, and API route files", () => {
   const root = mkdtempSync(join(tmpdir(), "javafy-fullstack-"));
