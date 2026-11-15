@@ -220,7 +220,7 @@ async function dev(): Promise<void> {
             buildErrors = result.errors.length > 0;
             if (!buildErrors && result.outputFiles?.[0]) {
               bundle = result.outputFiles[0].text;
-              for (const client of clients) client.write("event: reload\\ndata: updated\\n\\n");
+              for (const client of clients) client.write("event: reload\ndata: updated\n\n");
               console.log("  Javafy: application rebuilt");
             } else if (buildErrors) {
               console.error("Javafy: compilation failed");
@@ -252,7 +252,7 @@ async function dev(): Promise<void> {
         "cache-control": "no-cache",
         connection: "keep-alive"
       });
-      response.write("event: connected\\ndata: ready\\n\\n");
+      response.write("event: connected\ndata: ready\n\n");
       clients.add(response);
       request.on("close", () => clients.delete(response));
       return;
@@ -303,7 +303,7 @@ javafyEvents.addEventListener("reload", () => location.reload());
 </script>
 <script type="module" src="/@javafy/app.js"></script>`;
         const injected = html.includes("</body>")
-          ? html.replace("</body>", liveReload + "\\n</body>")
+          ? html.replace("</body>", liveReload + "\n</body>")
           : html + liveReload;
         response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
         response.end(injected);
@@ -316,10 +316,10 @@ javafyEvents.addEventListener("reload", () => location.reload());
   });
 
   server.listen(config.dev.port, config.dev.host, () => {
-    console.log(`\\n  Javafy ${JAVAFY_VERSION} dev server: http://${config.dev.host}:${config.dev.port}\\n`);
+    console.log(`\n  Javafy ${JAVAFY_VERSION} dev server: http://${config.dev.host}:${config.dev.port}\n`);
     console.log(`  File-based routing: ${entryConfig.usesRouter ? "enabled" : "not detected"}`);
     console.log("  TypeScript/TSX compiler: enabled");
-    console.log("  Live reload: enabled\\n");
+    console.log("  Live reload: enabled\n");
   });
 
   const shutdown = async () => {
@@ -353,7 +353,7 @@ async function build(): Promise<void> {
   if (html) {
     const productionHtml = html.replace(
       "</body>",
-      '<script type="module" src="/assets/app.js"></script>\\n</body>'
+      '<script type="module" src="/assets/app.js"></script>\n</body>'
     );
     writeFileSync(join(output, "index.html"), productionHtml);
   }
@@ -374,7 +374,7 @@ async function build(): Promise<void> {
   });
 
   if (entryConfig.usesRouter) {
-    writeFileSync(join(output, "_redirects"), "/* /index.html 200\\n");
+    writeFileSync(join(output, "_redirects"), "/* /index.html 200\n");
   }
 
   console.log("Javafy: production build created in dist/");
@@ -389,7 +389,7 @@ async function main(): Promise<void> {
   }
   if (command === "dev") return dev();
   if (command === "build") return build();
-  console.error(`Unknown command: ${command}\\n`);
+  console.error(`Unknown command: ${command}\n`);
   help();
   process.exitCode = 1;
 }
