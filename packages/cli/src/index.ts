@@ -414,14 +414,8 @@ async function build(): Promise<void> {
   mkdirSync(output, { recursive: true });
   if (existsSync(publicRoot)) cpSync(publicRoot, output, { recursive: true });
 
-  const html = getHtml(root) ?? getHtml(publicRoot);
-  if (html) {
-    const productionHtml = html.replace(
-      "</body>",
-      '<script type="module" src="/assets/app.js"></script>\n</body>'
-    );
-    writeFileSync(join(output, "index.html"), productionHtml);
-  }
+  const html = getHtml(root) ?? getHtml(publicRoot) ??
+    '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><div id="root"></div></body></html>';
 
   await esbuild({
     absWorkingDir: root,
@@ -439,7 +433,23 @@ async function build(): Promise<void> {
   });
 
   if (entryConfig.usesRouter) {
+    const manifestFile = join(output, "server", "manifest.js");
+    await buildFullstackManifest(root, appDir, manifestFile);
+    const manifest = await loadFullstackManifest(manifestFile);
+    const staticPaths = await getStaticRoutePaths(manifest);
+    for (const pathname of staticPaths) {
+      const rendered = await renderFullstackPage(manifest, pathname, { static: true });
+      if (!rendered) continue;
+      const document = renderHtmlDocument(html, rendered.html, pathname, rendered.props, "/assets/app.js");
+      const relative = pathname === "/" ? "index.html" : join(pathname.replace(/^\\//, ""), "index.html");
+      const destination = join(output, relative);
+      mkdirSync(dirname(destination), { recursive: true });
+      writeFileSync(destination, document);
+      console.log("  SSG: " + pathname);
+    }
     writeFileSync(join(output, "_redirects"), "/* /index.html 200\n");
+  } else if (html) {
+    writeFileSync(join(output, "index.html"), html.replace("</body>", '<script type="module" src="/assets/app.js"></script>\n</body>'));
   }
 
   console.log("Javafy: production build created in dist/");
