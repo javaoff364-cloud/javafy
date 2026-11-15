@@ -137,7 +137,7 @@ export function createFastRefreshPlugin(root: string): Plugin {
           "window.__JAVAFY_REFRESH_MODULE__ = " + JSON.stringify(moduleId) + ";",
           transformed.code,
           "window.__JAVAFY_REFRESH_MODULE__ = __javafyPreviousRefreshModule;"
-        ].join("\\n");
+        ].join("\n");
         return { contents, loader: "js", resolveDir: dirname(file), watchFiles: [file] };
       });
     }
