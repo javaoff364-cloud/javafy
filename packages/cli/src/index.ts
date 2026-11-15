@@ -254,7 +254,7 @@ async function dev(): Promise<void> {
   const root = process.cwd();
   const appDir = resolve(root, config.appDir);
   const entryConfig = entryOptions(root, appDir);
-  const manifestFile = resolve(root, ".javafy/server-manifest.js");
+  const manifestFile = resolve(root, ".javafy/server-manifest.mjs");
   await buildFullstackManifest(root, appDir, manifestFile);
   let manifest = await loadFullstackManifest(manifestFile);
   let apiHandler = createApiRouter(manifest.apiRoutes);
@@ -466,9 +466,11 @@ async function build(): Promise<void> {
     jsx: "automatic"
   });
 
+  const manifestFile = join(output, "server", "manifest.mjs");
+  await buildFullstackManifest(root, appDir, manifestFile);
+  writeFileSync(join(output, "server", "shell.html"), html);
+
   if (entryConfig.usesRouter) {
-    const manifestFile = join(output, "server", "manifest.js");
-    await buildFullstackManifest(root, appDir, manifestFile);
     const manifest = await loadFullstackManifest(manifestFile);
     const staticPaths = await getStaticRoutePaths(manifest);
     for (const pathname of staticPaths) {
@@ -548,7 +550,8 @@ async function start(): Promise<void> {
           sendText(response, 404, "Javafy: page not found.");
           return;
         }
-        const shell = getHtml(root) ?? '<!doctype html><html><head><meta charset="utf-8"></head><body><div id="root"></div></body></html>';
+        const shellFile = join(output, "server", "shell.html");
+        const shell = existsSync(shellFile) ? readFileSync(shellFile, "utf8") : getHtml(root) ?? '<!doctype html><html><head><meta charset="utf-8"></head><body><div id="root"></div></body></html>';
         const document = renderHtmlDocument(shell, rendered.html, pathname, rendered.props, "/assets/app.js");
         response.writeHead(rendered.status, { "content-type": "text/html; charset=utf-8" });
         response.end(document);
