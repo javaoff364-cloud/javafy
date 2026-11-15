@@ -233,7 +233,7 @@ function renderHtmlDocument(
     '<script type="module" src="' + scriptPath + '"></script>'
   ].filter(Boolean).join("\n");
   const root = '<div id="root">' + body + "</div>";
-  const rootPattern = /<div\\b(?=[^>]*\\bid=["']root["'])[^>]*>\\s*<\\/div>/i;
+  const rootPattern = /<div\b(?=[^>]*\bid=["']root["'])[^>]*>\s*<\/div>/i;
   const withRoot = rootPattern.test(shell)
     ? shell.replace(rootPattern, root)
     : shell.includes("</body>")
