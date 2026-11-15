@@ -7,6 +7,7 @@ import {
   useState,
   type AnchorHTMLAttributes,
   type ComponentType,
+  type MouseEvent,
   type ReactNode
 } from "react";
 import { matchRoute, type RouteDefinition } from "@javafy/core";
@@ -65,7 +66,7 @@ export function Link({
   return createElement("a", {
     ...props,
     href,
-    onClick: (event) => {
+    onClick: (event: MouseEvent<HTMLAnchorElement>) => {
       onClick?.(event);
       if (
         event.defaultPrevented ||
