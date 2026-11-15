@@ -25,7 +25,7 @@ Usage:
   javafy <command>
 
 Commands:
-  dev       Start the development server with routing and live reload
+  dev       Start the development server with routing and React Fast Refresh
   build     Build the application for production
   start     Start the production SSR/API server
   --version Show the current version
