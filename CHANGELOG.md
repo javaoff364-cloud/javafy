@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — 0.5.0 Runtime Engine (work in progress)
+## 0.5.0 — Runtime Engine
 
 - Added a development error overlay for TypeScript/TSX compilation failures.
 - Added build-error and build-success events to the development server event stream.
