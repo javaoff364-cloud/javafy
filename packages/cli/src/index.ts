@@ -14,6 +14,7 @@ import {
 } from "esbuild";
 import { resolveConfig, JAVAFY_VERSION, type JavafyConfig } from "@javafy/core";
 import { createDevClientScript, createModuleGraph, serializeBuildErrors } from "./runtime.js";
+import { createFastRefreshPlugin, createReactDomClientPlugin, FAST_REFRESH_BANNER, FAST_REFRESH_FOOTER } from "./fast-refresh.js";
 
 const command = process.argv[2] ?? "dev";
 
@@ -261,7 +262,8 @@ async function dev(): Promise<void> {
   let manifest = await loadFullstackManifest(manifestFile);
   let apiHandler = createApiRouter(manifest.apiRoutes);
   const clients = new Set<ServerResponse>();
-  let bundle = "";
+  const devOutputDirectory = resolve(root, ".javafy/dev");
+  let devOutputFiles = new Map<string, Uint8Array>();
   let buildErrors = false;
   let currentBuildErrorPayload = "[]";
   let moduleGraph = { modules: [] as Array<{ id: string; imports: string[] }> };
@@ -274,9 +276,21 @@ async function dev(): Promise<void> {
 
   const context = await createBuildContext({
     absWorkingDir: root,
-    entryPoints: entryConfig.entryPoints,
+    entryPoints: {
+      app: entryConfig.entryPoints[0],
+      "vendor/react-dom-client": "react-dom/client",
+      "vendor/react-refresh": "react-refresh/runtime"
+    },
+    outdir: devOutputDirectory,
+    entryNames: "[name]",
+    chunkNames: "chunks/[name]-[hash]",
+    splitting: true,
+    banner: { js: FAST_REFRESH_BANNER },
+    footer: { js: FAST_REFRESH_FOOTER },
     plugins: [
       ...entryConfig.plugins,
+      createFastRefreshPlugin(root),
+      createReactDomClientPlugin(root),
       {
         name: "javafy-live-reload",
         setup(build) {
@@ -291,11 +305,14 @@ async function dev(): Promise<void> {
               return;
             }
             currentBuildErrorPayload = "[]";
-            if (result.outputFiles?.[0]) bundle = result.outputFiles[0].text;
+            devOutputFiles = new Map((result.outputFiles ?? []).map((file) => [
+              relative(devOutputDirectory, file.path).split(sep).join("/"),
+              file.contents
+            ]));
             moduleGraph = createModuleGraph(result.metafile, root);
             for (const client of clients) {
-              client.write("event: build-success\ndata: ready\n\n");
-              client.write("event: reload\ndata: updated\n\n");
+              client.write("event: build-success\\ndata: ready\\n\\n");
+              client.write("event: hmr\\ndata: updated\\n\\n");
             }
             console.log("  Javafy: application rebuilt");
           });
@@ -379,12 +396,19 @@ async function dev(): Promise<void> {
       return;
     }
 
-    if (rawUrl.split("?")[0] === "/@javafy/app.js") {
-      response.writeHead(buildErrors ? 503 : 200, {
+    if (rawUrl.split("?")[0].startsWith("/@javafy/")) {
+      const assetPath = rawUrl.split("?")[0].slice("/@javafy/".length);
+      const asset = devOutputFiles.get(assetPath);
+      if (!asset || buildErrors) {
+        response.writeHead(buildErrors ? 503 : 404, { "content-type": "text/plain; charset=utf-8" });
+        response.end(buildErrors ? "Javafy compilation failed. Check the terminal." : "Javafy development asset not found.");
+        return;
+      }
+      response.writeHead(200, {
         "content-type": "text/javascript; charset=utf-8",
         "cache-control": "no-store"
       });
-      response.end(buildErrors ? "console.error('Javafy compilation failed. Check the terminal.');" : bundle);
+      response.end(Buffer.from(asset));
       return;
     }
 
