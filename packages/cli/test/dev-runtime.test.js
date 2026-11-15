@@ -55,7 +55,7 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
     assert.equal(clientResponse.status, 200);
     const client = await clientResponse.text();
     assert.match(client, /javafy-error-overlay/);
-    assert.match(client, /build-error/);
+    assert.match(client, /build-error/);\n    assert.match(client, /addEventListener\\("hmr"/);\n\n    const preambleResponse = await fetch(origin + "/__javafy/refresh-preamble.js");\n    assert.equal(preambleResponse.status, 200);\n    assert.match(await preambleResponse.text(), /injectIntoGlobalHook/);\n\n    const appResponse = await fetch(origin + "/@javafy/app.js");\n    assert.equal(appResponse.status, 200);\n    assert.match(await appResponse.text(), /performReactRefresh/);\n\n    const refreshRuntimeResponse = await fetch(origin + "/@javafy/vendor/react-refresh.js");\n    assert.equal(refreshRuntimeResponse.status, 200);\n    assert.match(await refreshRuntimeResponse.text(), /performReactRefresh/);
 
     const pageResponse = await fetch(origin + "/");
     assert.equal(pageResponse.status, 200);
