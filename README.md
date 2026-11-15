@@ -2,59 +2,71 @@
 
 **Build faster. Run smarter.**
 
-Javafy is a performance-first TypeScript framework ecosystem for building modern web applications. It is being developed as an integrated platform for frontend rendering, backend routes, development tooling, and production builds.
+Javafy is a performance-first TypeScript fullstack framework ecosystem for building modern web applications.
 
 > Javafy is in early development. APIs and internal architecture may change before 1.0.
 
 ## Goals
 
-- Fast startup and development feedback.
-- A cohesive TypeScript-first developer experience.
+- TypeScript-first development.
+- Fast compilation and development feedback.
 - Frontend and backend features in one framework.
 - Efficient production builds and runtime performance.
 - Clear, modular architecture.
 
 ## Current status
 
-**Version:** 0.1.0 — Foundation
+**Version:** 0.2.0 — Development Engine
 
-The first milestone establishes the monorepo, core package, CLI, and a minimal static-file development server. Routing, HMR, SSR, SSG, and the production bundler are planned milestones, not implemented features yet.
+Available now:
+- TypeScript and TSX bundling through esbuild.
+- React and React DOM application entry.
+- Development server with automatic rebuild.
+- Browser live reload after successful rebuilds.
+- Production JavaScript bundling and static asset output.
+
+Live reload currently refreshes the page. State-preserving React Fast Refresh and true HMR are planned for a later release.
 
 ## Requirements
 
 - Node.js 20+
 - npm 10+
 
-## Development
+## Quick start
 
 ```bash
 git clone https://github.com/javaoff364-cloud/javafy.git
 cd javafy
 npm install
 npm run build
+npm run dev:example
 ```
 
-Run the CLI from the monorepo:
+Open http://localhost:3000. Edit `examples/hello-world/src/main.tsx` and save to trigger a rebuild and browser reload.
+
+## Production build
 
 ```bash
-node packages/cli/dist/index.js --help
+npm run build:example
 ```
 
-## Example
+The example production output is written to `examples/hello-world/dist`.
+
+## CLI commands
+
+From a Javafy project directory containing `src/main.tsx` and `index.html`:
 
 ```bash
-cd examples/hello-world
-node ../../packages/cli/dist/index.js dev
+node /path/to/javafy/packages/cli/dist/index.js dev
+node /path/to/javafy/packages/cli/dist/index.js build
 ```
-
-Open http://localhost:3000.
 
 ## Roadmap
 
 | Version | Milestone | Focus |
 | --- | --- | --- |
 | 0.1.0 | Foundation | Monorepo, core, CLI, minimal dev server |
-| 0.2.0 | Development Engine | Compiler integration and HMR |
+| 0.2.0 | Development Engine | TypeScript/TSX compiler, rebuild, live reload |
 | 0.3.0 | Routing | File-based routes, layouts, dynamic routes |
 | 0.4.0 | Fullstack | API routes, SSR, SSG |
 | 1.0.0 | Production | Optimizer, caching, security, benchmarks |
@@ -65,7 +77,7 @@ Performance is a core design goal. We will publish reproducible benchmarks for c
 
 ## Contributing
 
-Issues and pull requests are welcome. Please include reproduction steps and benchmark details when reporting performance problems.
+Issues and pull requests are welcome. Include reproduction steps and environment details when reporting bugs.
 
 ## License
 
