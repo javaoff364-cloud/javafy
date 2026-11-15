@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 import { readFile } from "node:fs/promises";
 import { dirname, relative, resolve, sep } from "node:path";
-import type { Metafile, Message } from "esbuild";
+import type { Metafile, Message, Plugin } from "esbuild";
 
 export interface JavafyModuleGraphEntry {
   id: string;
