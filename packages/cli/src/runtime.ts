@@ -21,7 +21,7 @@ export function createModuleGraph(
     const id = relative(root, absolute).split(sep).join("/");
     const imports = info.imports
       .filter((item) => !item.external && ids.has(item.path))
-      .map((item) => relative(root, resolve(item.path)).split(sep).join("/"));
+      .map((item) => relative(root, resolve(root, item.path)).split(sep).join("/"));
     return { id, imports };
   });
   modules.sort((a, b) => a.id.localeCompare(b.id));
