@@ -306,7 +306,7 @@ async function dev(): Promise<void> {
             devOutputFiles = new Map((result.outputFiles ?? []).map((file) => {
               const outputPath = relative(devOutputDirectory, file.path).split(sep).join("/");
               const contents = outputPath === "app.js"
-                ? Buffer.concat([Buffer.from(file.contents), Buffer.from("\\n" + FAST_REFRESH_FOOTER)])
+                ? Buffer.concat([Buffer.from(file.contents), Buffer.from("\n" + FAST_REFRESH_FOOTER)])
                 : file.contents;
               return [outputPath, contents];
             }));
