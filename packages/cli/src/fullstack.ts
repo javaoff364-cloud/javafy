@@ -213,10 +213,10 @@ export async function getStaticRoutePaths(manifest: FullstackManifest): Promise<
   const paths: string[] = [];
   for (const page of manifest.pages) {
     if (!page.path.includes(":")) {
-      paths.push(page.path);
+      if (!page.getServerSideProps) paths.push(page.path);
       continue;
     }
-    if (!page.getStaticPaths) continue;
+    if (page.getServerSideProps || !page.getStaticPaths) continue;
     const entries = await page.getStaticPaths();
     for (const entry of entries) {
       let pathname = page.path;
