@@ -67,7 +67,7 @@ export function createDevClientScript(): string {
       item.textContent = [
         error.file ? error.file + (error.line ? ":" + error.line + ":" + (error.column ?? 0) : "") : "",
         error.text
-      ].filter(Boolean).join("\\n");
+      ].filter(Boolean).join("\n");
       item.style.whiteSpace = "pre-wrap";
       overlay.append(item);
     }
