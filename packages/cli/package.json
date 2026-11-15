@@ -1,6 +1,6 @@
 {
   "name": "@javafy/cli",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Command-line interface for Javafy.",
   "license": "MIT",
   "type": "module",
@@ -8,13 +8,12 @@
     "javafy": "./dist/index.js"
   },
   "dependencies": {
-    "@javafy/core": "0.2.0",
+    "@javafy/core": "0.3.0",
+    "@javafy/router": "0.3.0",
     "esbuild": "^0.25.5"
   },
   "scripts": {
     "build": "tsc -b"
   },
-  "files": [
-    "dist"
-  ]
+  "files": ["dist"]
 }
