@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 — Runtime Engine
+
+- Added React Refresh transforms for application TS/TSX modules.
+- Added split ESM development output and HMR updates without reloading the document.
+- Preserved React roots between updates and reused unchanged vendor chunks.
+- Added a browser compilation-error overlay and module graph diagnostics endpoint.
+- Added integration coverage for the runtime assets, refresh preamble, and HMR events.
+- Kept the React Refresh runtime out of production bundles.
+
+Known limitations: incompatible component signature changes, HTML shell edits, global side effects, and server-only route changes may require a full page refresh or server restart. Fast Refresh is development-only.
+
 ## 0.4.0 — Fullstack Engine
 
 - Added the `@javafy/server` package and Web-standard API route dispatcher.

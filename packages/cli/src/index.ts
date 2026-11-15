@@ -4,7 +4,7 @@ import {
   cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync,
   watch, writeFileSync
 } from "node:fs";
-import { dirname, extname, join, normalize, resolve, sep } from "node:path";
+import { dirname, extname, join, normalize, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createApiRouter } from "@javafy/server";
 import { buildFullstackManifest, discoverFullstackFiles, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "./fullstack.js";
@@ -13,6 +13,7 @@ import {
   type BuildResult, type Plugin
 } from "esbuild";
 import { resolveConfig, JAVAFY_VERSION, type JavafyConfig } from "@javafy/core";
+import { createDevClientScript, createModuleGraph, serializeBuildErrors, createFastRefreshPlugin, createReactDomClientPlugin, FAST_REFRESH_PREAMBLE, FAST_REFRESH_FOOTER } from "./runtime.js";
 
 const command = process.argv[2] ?? "dev";
 
@@ -24,7 +25,7 @@ Usage:
   javafy <command>
 
 Commands:
-  dev       Start the development server with routing and live reload
+  dev       Start the development server with routing and React Fast Refresh
   build     Build the application for production
   start     Start the production SSR/API server
   --version Show the current version
@@ -230,7 +231,8 @@ function renderHtmlDocument(
   const data = JSON.stringify({ [pathname]: props }).replace(/</g, "\\u003c");
   const scripts = [
     "<script>window.__JAVAFY_FULLSTACK__=true;window.__JAVAFY_DATA__=" + data + ";</script>",
-    liveReload ? '<script>const events=new EventSource("/__javafy/events");events.addEventListener("reload",()=>location.reload());</script>' : "",
+    liveReload ? '<script src="/__javafy/client.js"></script>' : "",
+    liveReload ? '<script type="module" src="/__javafy/refresh-preamble.js"></script>' : "",
     '<script type="module" src="' + scriptPath + '"></script>'
   ].filter(Boolean).join("\n");
   const root = '<div id="root">' + body + "</div>";
@@ -260,8 +262,11 @@ async function dev(): Promise<void> {
   let manifest = await loadFullstackManifest(manifestFile);
   let apiHandler = createApiRouter(manifest.apiRoutes);
   const clients = new Set<ServerResponse>();
-  let bundle = "";
+  const devOutputDirectory = resolve(root, ".javafy/dev");
+  let devOutputFiles = new Map<string, Uint8Array>();
   let buildErrors = false;
+  let currentBuildErrorPayload = "[]";
+  let moduleGraph = { modules: [] as Array<{ id: string; imports: string[] }> };
 
   if (!entryConfig.usesRouter && !existsSync(entryConfig.entry)) {
     console.error("Javafy: src/main.tsx or a page in src/app/ was not found.");
@@ -271,35 +276,59 @@ async function dev(): Promise<void> {
 
   const context = await createBuildContext({
     absWorkingDir: root,
-    entryPoints: entryConfig.entryPoints,
+    entryPoints: {
+      app: entryConfig.entryPoints[0],
+      "react-dom-client": "react-dom/client",
+      "react-refresh": "react-refresh/runtime"
+    },
+    outdir: devOutputDirectory,
+    entryNames: "[name]",
+    chunkNames: "chunks/[name]-[hash]",
+    splitting: true,
     plugins: [
       ...entryConfig.plugins,
+      createFastRefreshPlugin(root),
+      createReactDomClientPlugin(root),
       {
         name: "javafy-live-reload",
         setup(build) {
           build.onEnd((result: BuildResult) => {
             buildErrors = result.errors.length > 0;
-            if (!buildErrors && result.outputFiles?.[0]) {
-              bundle = result.outputFiles[0].text;
-              for (const client of clients) client.write("event: reload\ndata: updated\n\n");
-              console.log("  Javafy: application rebuilt");
-            } else if (buildErrors) {
+            if (buildErrors) {
+              const payload = serializeBuildErrors(result.errors);
+              currentBuildErrorPayload = payload;
+              for (const client of clients) client.write("event: build-error\ndata: " + payload + "\n\n");
               console.error("Javafy: compilation failed");
               for (const error of result.errors) console.error(error.text);
+              return;
             }
+            currentBuildErrorPayload = "[]";
+            devOutputFiles = new Map((result.outputFiles ?? []).map((file) => {
+              const outputPath = relative(devOutputDirectory, resolve(file.path)).split(sep).join("/");
+              const contents = outputPath === "app.js"
+                ? Buffer.concat([Buffer.from(file.contents), Buffer.from("\n" + FAST_REFRESH_FOOTER)])
+                : file.contents;
+              return [outputPath, contents];
+            }));
+            moduleGraph = createModuleGraph(result.metafile, root);
+            for (const client of clients) {
+              client.write("event: build-success\ndata: ready\n\n");
+              client.write("event: hmr\ndata: updated\n\n");
+            }
+            console.log("  Javafy: application rebuilt");
           });
         }
       }
     ],
     bundle: true,
     write: false,
-    outfile: "app.js",
     platform: "browser",
     format: "esm",
     target: ["es2022"],
     sourcemap: "inline",
     jsx: "automatic",
-    logLevel: "silent"
+    logLevel: "silent",
+    metafile: true
   });
 
   await context.rebuild();
@@ -336,6 +365,42 @@ async function dev(): Promise<void> {
 
   const server = createServer(async (request, response) => {
     const rawUrl = request.url ?? "/";
+    if (rawUrl.split("?")[0] === "/__javafy/refresh-preamble.js") {
+      response.writeHead(200, {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "no-store"
+      });
+      response.end(FAST_REFRESH_PREAMBLE);
+      return;
+    }
+
+    if (rawUrl.split("?")[0] === "/__javafy/client.js") {
+      response.writeHead(200, {
+        "content-type": "text/javascript; charset=utf-8",
+        "cache-control": "no-store"
+      });
+      response.end(createDevClientScript());
+      return;
+    }
+
+    if (rawUrl.split("?")[0] === "/__javafy/assets") {
+      response.writeHead(200, {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store"
+      });
+      response.end(JSON.stringify([...devOutputFiles.keys()]));
+      return;
+    }
+
+    if (rawUrl.split("?")[0] === "/__javafy/module-graph") {
+      response.writeHead(200, {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": "no-store"
+      });
+      response.end(JSON.stringify(moduleGraph));
+      return;
+    }
+
     if (rawUrl === "/__javafy/events") {
       response.writeHead(200, {
         "content-type": "text/event-stream",
@@ -344,16 +409,24 @@ async function dev(): Promise<void> {
       });
       response.write("event: connected\ndata: ready\n\n");
       clients.add(response);
-      request.on("close", () => clients.delete(response));
+      if (buildErrors) response.write("event: build-error\ndata: " + currentBuildErrorPayload + "\n\n");
+      response.on("close", () => clients.delete(response));
       return;
     }
 
-    if (rawUrl.split("?")[0] === "/@javafy/app.js") {
-      response.writeHead(buildErrors ? 503 : 200, {
+    if (rawUrl.split("?")[0].startsWith("/@javafy/")) {
+      const assetPath = rawUrl.split("?")[0].slice("/@javafy/".length);
+      const asset = devOutputFiles.get(assetPath);
+      if (!asset || buildErrors) {
+        response.writeHead(buildErrors ? 503 : 404, { "content-type": "text/plain; charset=utf-8" });
+        response.end(buildErrors ? "Javafy compilation failed. Check the terminal." : "Javafy development asset not found.");
+        return;
+      }
+      response.writeHead(200, {
         "content-type": "text/javascript; charset=utf-8",
         "cache-control": "no-store"
       });
-      response.end(buildErrors ? "console.error('Javafy compilation failed. Check the terminal.');" : bundle);
+      response.end(Buffer.from(asset));
       return;
     }
 
@@ -389,7 +462,16 @@ async function dev(): Promise<void> {
       response.writeHead(200, {
         "content-type": mimeTypes[extname(target)] ?? "application/octet-stream"
       });
-      response.end(readFileSync(target));
+      const fileContent = readFileSync(target);
+      if (extname(target) === ".html") {
+        const html = fileContent.toString("utf8");
+        const clientScript = '<script src="/__javafy/client.js"></script>';
+        response.end(html.includes("</body>")
+          ? html.replace("</body>", clientScript + "</body>")
+          : html + clientScript);
+      } else {
+        response.end(fileContent);
+      }
       return;
     }
 
@@ -567,7 +649,7 @@ async function start(): Promise<void> {
   });
 
   server.listen(port, host, () => {
-    console.log("\\n  Javafy production server: http://" + host + ":" + port + "\\n");
+    console.log("\n  Javafy production server: http://" + host + ":" + port + "\n");
     console.log("  API routes: enabled");
     console.log("  Server-side rendering: enabled");
   });

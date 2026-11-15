@@ -1,13 +1,24 @@
 {
   "name": "@javafy/server",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Server runtime primitives for Javafy fullstack applications.",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "files": ["dist"],
-  "dependencies": { "@javafy/core": "0.4.0" },
-  "scripts": { "build": "tsc -b" }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@javafy/core": "0.5.0"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  }
 }
