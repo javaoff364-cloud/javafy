@@ -51,7 +51,13 @@ export interface DiscoveredFiles {
 const methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"] as const;
 
 function routeSegment(segment: string): string {
+  if (/^\[\[\.\.\.[^\]]+\]\]$/.test(segment)) return "*" + segment.slice(5, -2) + "?";
+  if (/^\[\.\.\.[^\]]+\]$/.test(segment)) return "*" + segment.slice(4, -1);
   return /^\[[^\]]+\]$/.test(segment) ? ":" + segment.slice(1, -1) : segment;
+}
+
+function isDynamicRoute(path: string): boolean {
+  return /(^|\/)(?::[^/]+|\*[^/?]+\??)(?=\/|$)/.test(path);
 }
 
 export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
@@ -232,18 +238,33 @@ export async function renderFullstackPage(
 export async function getStaticRoutePaths(manifest: FullstackManifest): Promise<string[]> {
   const paths: string[] = [];
   for (const page of manifest.pages) {
-    if (!page.path.includes(":")) {
+    if (!isDynamicRoute(page.path)) {
       if (!page.getServerSideProps) paths.push(page.path);
       continue;
     }
     if (page.getServerSideProps || !page.getStaticPaths) continue;
     const entries = await page.getStaticPaths();
+    const tokens = [...page.path.matchAll(/([:*])([^/?]+)(\?)?/g)];
     for (const entry of entries) {
       let pathname = page.path;
-      for (const [key, value] of Object.entries(entry.params)) {
-        pathname = pathname.replace(":" + key, encodeURIComponent(value));
+      let valid = true;
+      for (const token of tokens) {
+        const marker = token[0] ?? "";
+        const key = token[2] ?? "";
+        const optional = token[3] === "?";
+        const value = entry.params[key];
+        if (value === undefined) {
+          if (optional) pathname = pathname.replace(marker, "");
+          else valid = false;
+          continue;
+        }
+        const encoded = marker.startsWith("*")
+          ? value.split("/").map(encodeURIComponent).join("/")
+          : encodeURIComponent(value);
+        pathname = pathname.replace(marker, encoded);
       }
-      if (!pathname.includes(":")) paths.push(pathname);
+      pathname = pathname.replace(/\/+$/, "") || "/";
+      if (valid && !/[:*][^/]+/.test(pathname)) paths.push(pathname);
     }
   }
   return [...new Set(paths)];
