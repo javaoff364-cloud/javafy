@@ -493,7 +493,7 @@ async function dev(): Promise<void> {
           const rendered = await renderFullstackPage(manifest, pathname, { request: webRequest });
           const document = renderHtmlDocument(html, rendered?.html ?? "", pathname, rendered?.props ?? {}, "/@javafy/app.js", true);
           response.writeHead(rendered ? rendered.status : 404, { "content-type": "text/html; charset=utf-8" });
-          response.end(document);
+          response.end(request.method === "HEAD" ? undefined : document);
           return;
         } catch (error) {
           sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");

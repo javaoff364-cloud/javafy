@@ -54,3 +54,7 @@ test("decodes encoded static path segments", () => {
 test("rejects malformed percent encoding", () => {
   assert.equal(matchRoute("/blog/%E0%A4%A", [{ path: "/blog/:id" }]), null);
 });
+
+test("does not allow a catch-all segment before another route segment", () => {
+  assert.equal(matchRoute("/docs/a/end", [{ path: "/docs/*slug/end" }]), null);
+});

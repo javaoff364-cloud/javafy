@@ -64,6 +64,10 @@ export function matchRoute<T extends RouteDefinition>(
       const expected = candidate.segments[index] ?? "";
 
       if (expected.startsWith("*")) {
+        if (index !== candidate.segments.length - 1) {
+          matched = false;
+          break;
+        }
         const optional = expected.endsWith("?");
         const name = expected.slice(1, optional ? -1 : undefined);
         const remaining = currentSegments.slice(currentIndex);
