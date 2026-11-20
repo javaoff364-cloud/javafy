@@ -11,8 +11,8 @@ export interface RouteMatch<T extends RouteDefinition = RouteDefinition> {
   pathname: string;
 }
 
-function normalizePathname(pathname: string): string {
-  const clean = pathname.split("?")[0]?.split("#")[0] ?? "/";
+function normalizePathname(pathname: string, routePattern = false): string {
+  const clean = (routePattern ? pathname : pathname.split("?")[0] ?? "/").split("#")[0] ?? "/";
   const leading = clean.startsWith("/") ? clean : "/" + clean;
   return leading.length > 1 ? leading.replace(/\/+$/, "") : "/";
 }
@@ -51,7 +51,7 @@ export function matchRoute<T extends RouteDefinition>(
     .map((route, index) => ({
       route,
       index,
-      segments: normalizePathname(route.path).split("/").filter(Boolean)
+      segments: normalizePathname(route.path, true).split("/").filter(Boolean)
     }))
     .sort((a, b) => compareSpecificity(a.segments, b.segments) || a.index - b.index);
 
