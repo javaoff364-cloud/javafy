@@ -81,8 +81,9 @@ export function matchRoute<T extends RouteDefinition>(
           break;
         }
         params[name] = (decoded as string[]).join("/");
-        currentIndex = currentSegments.length;
-        break;
+        // Catch-all segments are terminal, so they consume the remainder,
+        // including zero segments when the catch-all is optional.
+        return { route: candidate.route, params, pathname: current };
       }
 
       const actual = currentSegments[currentIndex];
