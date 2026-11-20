@@ -186,9 +186,13 @@ export async function renderFullstackPage(
   if (page.path.includes(":") && page.getStaticPaths && !page.getServerSideProps) {
     const staticEntries = await page.getStaticPaths();
     const requiredParams = [...page.path.matchAll(/:([^/]+)/g)].map((match) => match[1] ?? "");
+    const optionalParams = routeParams.filter((match) => match[3] === "?").map((match) => match[2] ?? "");
     const allowed = staticEntries.some((entry) =>
       requiredParams.every((key) => entry.params[key] === matched.params[key]) &&
-      Object.keys(entry.params).every((key) => requiredParams.includes(key))
+      Object.keys(entry.params).every((key) =>
+        allowedParams.includes(key) && entry.params[key] === matched.params[key]
+      ) &&
+      optionalParams.every((key) => entry.params[key] !== undefined || matched.params[key] === "")
     );
     if (!allowed) {
       const notFound = manifest.notFound

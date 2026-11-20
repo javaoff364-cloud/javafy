@@ -631,7 +631,7 @@ async function start(): Promise<void> {
       response.writeHead(200, {
         "content-type": mimeTypes[extname(target)] ?? "application/octet-stream"
       });
-      response.end(readFileSync(target));
+      response.end(request.method === "HEAD" ? undefined : readFileSync(target));
       return;
     }
 
@@ -647,7 +647,7 @@ async function start(): Promise<void> {
         const shell = existsSync(shellFile) ? readFileSync(shellFile, "utf8") : getHtml(root) ?? '<!doctype html><html><head><meta charset="utf-8"></head><body><div id="root"></div></body></html>';
         const document = renderHtmlDocument(shell, rendered.html, pathname, rendered.props, "/assets/app.js");
         response.writeHead(rendered.status, { "content-type": "text/html; charset=utf-8" });
-        response.end(document);
+        response.end(request.method === "HEAD" ? undefined : document);
         return;
       } catch (error) {
         sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");

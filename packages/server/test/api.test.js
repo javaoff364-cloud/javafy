@@ -49,3 +49,15 @@ test("uses GET as the HEAD fallback and removes the body", async () => {
   assert.equal(response.status, 200);
   assert.equal(await response.text(), "");
 });
+
+test("does not leak thrown exception details to API clients", async () => {
+  const privateRouter = createApiRouter([{
+    path: "/api/private",
+    GET: () => { throw new Error("database password leaked"); }
+  }]);
+  const response = await privateRouter(new Request("http://localhost/api/private"));
+  assert.equal(response.status, 500);
+  const payload = await response.json();
+  assert.equal(payload.message, "An unexpected error occurred.");
+  assert.doesNotMatch(JSON.stringify(payload), /database password/);
+});
