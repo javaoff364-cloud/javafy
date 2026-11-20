@@ -54,7 +54,7 @@ src/
     ├── docs/
     │   └── [...slug]/
     │       └── page.tsx
-    └── optional-docs/
+    ├── optional-docs/
         └── [[...slug]]/
             └── page.tsx
     └── api/

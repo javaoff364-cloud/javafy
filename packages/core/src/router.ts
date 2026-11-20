@@ -13,7 +13,7 @@ export interface RouteMatch<T extends RouteDefinition = RouteDefinition> {
 
 function normalizePathname(pathname: string): string {
   const clean = pathname.split("?")[0]?.split("#")[0] ?? "/";
-  const leading = clean.startsWith("/") ? clean : \`/\${clean}\`;
+  const leading = clean.startsWith("/") ? clean : "/" + clean;
   return leading.length > 1 ? leading.replace(/\/+$/, "") : "/";
 }
 

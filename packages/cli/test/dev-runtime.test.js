@@ -170,9 +170,9 @@ test("dev server serves and boots a non-router src/main.tsx application", { time
     }
     assert.ok(response?.ok, "non-router dev server did not serve index.html:\n" + output);
     const html = await response.text();
-    assert.match(html, /__javafy\\/client\\.js/);
-    assert.match(html, /__javafy\\/refresh-preamble\\.js/);
-    assert.match(html, /\\/@javafy\\/app\\.js/);
+    assert.ok(html.includes("/__javafy/client.js"));
+    assert.ok(html.includes("/__javafy/refresh-preamble.js"));
+    assert.ok(html.includes("/@javafy/app.js"));
     const app = await fetch(origin + "/@javafy/app.js");
     assert.equal(app.status, 200);
     assert.match(await app.text(), /SPA works/);

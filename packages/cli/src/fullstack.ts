@@ -183,9 +183,11 @@ export async function renderFullstackPage(
     return { html: renderToString(notFound), props: {}, status: 404 };
   }
   const page = matched.route;
-  if (page.path.includes(":") && page.getStaticPaths && !page.getServerSideProps) {
+  if (isDynamicRoute(page.path) && page.getStaticPaths && !page.getServerSideProps) {
     const staticEntries = await page.getStaticPaths();
-    const requiredParams = [...page.path.matchAll(/:([^/]+)/g)].map((match) => match[1] ?? "");
+    const routeParams = [...page.path.matchAll(/([:*])([^/?]+)(\?)?/g)];
+    const requiredParams = routeParams.filter((match) => match[3] !== "?").map((match) => match[2] ?? "");
+    const allowedParams = routeParams.map((match) => match[2] ?? "");
     const optionalParams = routeParams.filter((match) => match[3] === "?").map((match) => match[2] ?? "");
     const allowed = staticEntries.some((entry) =>
       requiredParams.every((key) => entry.params[key] === matched.params[key]) &&
