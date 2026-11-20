@@ -117,3 +117,57 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("discovers required and optional catch-all page and API routes", () => {
+  const root = mkdtempSync(join(tmpdir(), "javafy-catchall-"));
+  const app = join(root, "src", "app");
+  mkdirSync(join(app, "docs", "[...slug]"), { recursive: true });
+  mkdirSync(join(app, "optional", "[[...parts]]"), { recursive: true });
+  mkdirSync(join(app, "api", "files", "[...path]"), { recursive: true });
+  writeFileSync(join(app, "docs", "[...slug]", "page.tsx"), "export default function Docs() { return null }");
+  writeFileSync(join(app, "optional", "[[...parts]]", "page.tsx"), "export default function Optional() { return null }");
+  writeFileSync(join(app, "api", "files", "[...path]", "route.ts"), "export function GET() { return Response.json({ ok: true }) }");
+  try {
+    const found = discoverFullstackFiles(app);
+    assert.ok(found.pages.some((page) => page.path === "/docs/*slug"));
+    assert.ok(found.pages.some((page) => page.path === "/optional/*parts?"));
+    assert.ok(found.api.some((route) => route.path === "/api/files/*path"));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("generates static paths for catch-all route parameters", async () => {
+  const paths = await getStaticRoutePaths({
+    pages: [{
+      path: "/docs/*slug",
+      component: () => null,
+      layouts: [],
+      getStaticPaths: async () => [
+        { params: { slug: "guide/start here" } },
+        { params: { slug: "api/reference" } }
+      ]
+    }, {
+      path: "/optional/*parts?",
+      component: () => null,
+      layouts: [],
+      getStaticPaths: async () => [{ params: {} }, { params: { parts: "one/two" } }]
+    }],
+    apiRoutes: []
+  });
+  assert.deepEqual(paths, ["/docs/guide/start%20here", "/docs/api/reference", "/optional", "/optional/one/two"]);
+});
+
+test("optional catch-all SSG paths do not match paths that were not generated", async () => {
+  const manifest = {
+    pages: [{
+      path: "/optional/*parts?",
+      component: () => null,
+      layouts: [],
+      getStaticPaths: async () => [{ params: {} }]
+    }],
+    apiRoutes: []
+  };
+  const missing = await renderFullstackPage(manifest, "/optional/not-generated");
+  assert.equal(missing.status, 404);
+});

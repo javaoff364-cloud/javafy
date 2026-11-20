@@ -7,6 +7,11 @@
 - Preserved React roots between updates and reused unchanged vendor chunks.
 - Added a browser compilation-error overlay and module graph diagnostics endpoint.
 - Added integration coverage for the runtime assets, refresh preamble, and HMR events.
+- Fixed non-router development bootstrapping so `src/main.tsx` is actually loaded from the dev server.
+- Added required and optional catch-all routes for pages and API handlers, including static path generation.
+- Improved route specificity and safe decoding for encoded path segments.
+- Prevented API handler exception details from leaking to clients.
+- Corrected HEAD handling for static files and SSR responses.
 - Kept the React Refresh runtime out of production bundles.
 
 Known limitations: incompatible component signature changes, HTML shell edits, global side effects, and server-only route changes may require a full page refresh or server restart. Fast Refresh is development-only.

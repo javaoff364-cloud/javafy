@@ -90,9 +90,11 @@ function discoverRoutes(appDir: string): {
       .map((entry) => join(directory, entry.name))[0];
 
     if (page) {
-      const routeSegments = segments.map((segment) =>
-        /^\[.+\]$/.test(segment) ? `:${segment.slice(1, -1)}` : segment
-      );
+      const routeSegments = segments.map((segment) => {
+        if (/^\[\[\.\.\.[^\]]+\]\]$/.test(segment)) return "*" + segment.slice(5, -2) + "?";
+        if (/^\[\.\.\.[^\]]+\]$/.test(segment)) return "*" + segment.slice(4, -1);
+        return /^\[[^\]]+\]$/.test(segment) ? ":" + segment.slice(1, -1) : segment;
+      });
       const layouts: string[] = [];
       const rootLayout = layoutFile(appDir);
       if (rootLayout) layouts.push(rootLayout);
@@ -250,6 +252,18 @@ function renderHtmlDocument(
 function sendText(response: ServerResponse, status: number, message: string): void {
   response.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
   response.end(message);
+}
+
+function injectDevScripts(html: string): string {
+  if (html.includes("/@javafy/app.js")) return html;
+  const scripts = [
+    '<script src="/__javafy/client.js"></script>',
+    '<script type="module" src="/__javafy/refresh-preamble.js"></script>',
+    '<script type="module" src="/@javafy/app.js"></script>'
+  ].join("\n");
+  return html.includes("</body>")
+    ? html.replace("</body>", scripts + "\n</body>")
+    : html + scripts;
 }
 
 async function dev(): Promise<void> {
@@ -468,21 +482,27 @@ async function dev(): Promise<void> {
     }
 
     if (existsSync(target) && statSync(target).isDirectory()) target = join(target, "index.html");
-    if (existsSync(target) && statSync(target).isFile()) {
+    const isRouterShell = entryConfig.usesRouter && pathname === "/" && relative === "index.html";
+    if (!isRouterShell && existsSync(target) && statSync(target).isFile()) {
       response.writeHead(200, {
         "content-type": mimeTypes[extname(target)] ?? "application/octet-stream"
       });
       const fileContent = readFileSync(target);
       if (extname(target) === ".html") {
-        const html = fileContent.toString("utf8");
-        const clientScript = '<script src="/__javafy/client.js"></script>';
-        response.end(html.includes("</body>")
-          ? html.replace("</body>", clientScript + "</body>")
-          : html + clientScript);
+        response.end(request.method === "HEAD" ? undefined : injectDevScripts(fileContent.toString("utf8")));
       } else {
-        response.end(fileContent);
+        response.end(request.method === "HEAD" ? undefined : fileContent);
       }
       return;
+    }
+
+    if (!entryConfig.usesRouter && pathname === "/" && !extname(pathname)) {
+      const html = getHtml(root) ?? getHtml(publicRoot);
+      if (html) {
+        response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+        response.end(request.method === "HEAD" ? undefined : injectDevScripts(html));
+        return;
+      }
     }
 
     if (entryConfig.usesRouter && !extname(pathname)) {
@@ -493,7 +513,7 @@ async function dev(): Promise<void> {
           const rendered = await renderFullstackPage(manifest, pathname, { request: webRequest });
           const document = renderHtmlDocument(html, rendered?.html ?? "", pathname, rendered?.props ?? {}, "/@javafy/app.js", true);
           response.writeHead(rendered ? rendered.status : 404, { "content-type": "text/html; charset=utf-8" });
-          response.end(document);
+          response.end(request.method === "HEAD" ? undefined : document);
           return;
         } catch (error) {
           sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");
@@ -631,7 +651,7 @@ async function start(): Promise<void> {
       response.writeHead(200, {
         "content-type": mimeTypes[extname(target)] ?? "application/octet-stream"
       });
-      response.end(readFileSync(target));
+      response.end(request.method === "HEAD" ? undefined : readFileSync(target));
       return;
     }
 
@@ -647,7 +667,7 @@ async function start(): Promise<void> {
         const shell = existsSync(shellFile) ? readFileSync(shellFile, "utf8") : getHtml(root) ?? '<!doctype html><html><head><meta charset="utf-8"></head><body><div id="root"></div></body></html>';
         const document = renderHtmlDocument(shell, rendered.html, pathname, rendered.props, "/assets/app.js");
         response.writeHead(rendered.status, { "content-type": "text/html; charset=utf-8" });
-        response.end(document);
+        response.end(request.method === "HEAD" ? undefined : document);
         return;
       } catch (error) {
         sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");

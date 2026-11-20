@@ -147,3 +147,41 @@ test("dev server exposes the browser diagnostics client and module graph", { tim
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("dev server serves and boots a non-router src/main.tsx application", { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(process.cwd(), ".javafy-dev-spa-"));
+  mkdirSync(join(root, "src"), { recursive: true });
+  writeFileSync(join(root, "index.html"), "<!doctype html><html><body><div id=\"root\"></div></body></html>");
+  const port = await getFreePort();
+  writeFileSync(join(root, "javafy.config.js"), 'export default { dev: { host: "127.0.0.1", port: ' + port + ' } };');
+  writeFileSync(join(root, "src/main.tsx"), 'import React from "react"; import { createRoot } from "react-dom/client"; createRoot(document.getElementById("root")).render(<h1>SPA works</h1>);');
+  const cli = fileURLToPath(new URL("../dist/index.js", import.meta.url));
+  const child = spawn(process.execPath, [cli, "dev"], { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
+  let output = "";
+  child.stdout.on("data", (chunk) => { output += chunk.toString(); });
+  child.stderr.on("data", (chunk) => { output += chunk.toString(); });
+  const origin = "http://127.0.0.1:" + port;
+  try {
+    let response;
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      if (child.exitCode !== null) throw new Error("Javafy dev server exited early:\n" + output);
+      try { response = await fetch(origin + "/"); if (response.ok) break; } catch {}
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    assert.ok(response?.ok, "non-router dev server did not serve index.html:\n" + output);
+    const html = await response.text();
+    assert.ok(html.includes("/__javafy/client.js"));
+    assert.ok(html.includes("/__javafy/refresh-preamble.js"));
+    assert.ok(html.includes("/@javafy/app.js"));
+    const app = await fetch(origin + "/@javafy/app.js");
+    assert.equal(app.status, 200);
+    assert.match(await app.text(), /SPA works/);
+  } finally {
+    child.kill("SIGTERM");
+    if (child.exitCode === null) {
+      await Promise.race([once(child, "exit"), new Promise((resolve) => setTimeout(resolve, 3000))]);
+    }
+    if (child.exitCode === null) child.kill("SIGKILL");
+    rmSync(root, { recursive: true, force: true });
+  }
+});

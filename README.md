@@ -10,7 +10,7 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 
 - TypeScript and TSX compilation powered by esbuild.
 - React 19 application runtime.
-- File-based pages, dynamic segments, and nested layouts.
+- File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), and nested layouts.
 - File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
 - Server-side rendering (SSR) for page requests.
 - Server-side data loaders with `getServerSideProps`.
@@ -51,6 +51,12 @@ src/
     ├── blog/
     │   └── [id]/
     │       └── page.tsx
+    ├── docs/
+    │   └── [...slug]/
+    │       └── page.tsx
+    ├── optional-docs/
+        └── [[...slug]]/
+            └── page.tsx
     └── api/
         ├── health/
         │   └── route.ts
@@ -64,10 +70,12 @@ src/
 | `src/app/page.tsx` | `/` |
 | `src/app/about/page.tsx` | `/about` |
 | `src/app/blog/[id]/page.tsx` | `/blog/:id` |
+| `src/app/docs/[...slug]/page.tsx` | `/docs/*slug` (one or more segments) |
+| `src/app/optional-docs/[[...slug]]/page.tsx` | `/optional-docs/*slug?` (zero or more segments) |
 | `src/app/api/health/route.ts` | `/api/health` |
 | `src/app/api/users/[id]/route.ts` | `/api/users/:id` |
 
-A folder segment wrapped in square brackets becomes a dynamic parameter. The value is available as `params.id`.
+A folder segment wrapped in square brackets becomes a dynamic parameter. The value is available as `params.id`. Use `[...slug]` for one or more remaining path segments and `[[...slug]]` when the remaining path is optional; catch-all values are exposed as slash-separated strings.
 
 ### Page components
 
@@ -222,7 +230,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 - Fullstack navigation uses document requests to refresh server data; state-preserving client transitions are planned for a later runtime milestone.
 - `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
-- Streaming SSR, middleware, route-level loading/error boundaries, catch-all routes, and incremental regeneration are not included yet. React Fast Refresh is development-only.
+- Streaming SSR, middleware, route-level loading/error boundaries, and incremental regeneration are not included yet. React Fast Refresh is development-only.
 - API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
 
 ## Roadmap

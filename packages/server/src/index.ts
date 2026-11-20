@@ -64,8 +64,11 @@ export function createApiRouter(routes: readonly ApiRouteDefinition[]) {
       }
       return response;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown server error";
-      return Response.json({ error: "Internal Server Error", message }, { status: 500 });
+      // Never expose exception messages or stack details to API clients.
+      return Response.json(
+        { error: "Internal Server Error", message: "An unexpected error occurred." },
+        { status: 500 }
+      );
     }
   };
 }
