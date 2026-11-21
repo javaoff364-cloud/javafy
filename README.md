@@ -4,9 +4,9 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 0.6.0 is the latest stable release. The 0.7.0 navigation work is in development.
+> Javafy 0.7.0 is the latest release.
 
-## 0.6.0 features
+## Features
 
 - TypeScript and TSX compilation powered by esbuild.
 - React 19 application runtime.
@@ -19,6 +19,8 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 - Production Node.js server for SSR and API routes, with validated `HOST`/`PORT` overrides and clear startup errors.
 - Validated route patterns and configuration, including duplicate route parameter and catch-all checks.
 - Static assets and generated HTML in `dist/`.
+- Fullstack client-side navigation with request-time loader refresh and browser Back/Forward support.
+- Router URL state through `searchParams` and `hash`, with compatible shared layouts kept mounted across transitions.
 
 ## Requirements
 
