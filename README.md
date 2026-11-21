@@ -14,13 +14,13 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 - File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
 - File-based request middleware for API, SSR, and client-navigation data requests, with ordered execution, short-circuit responses, and request replacement.
 - Server-side rendering (SSR) for page requests.
-- Server-side data loaders with `getServerSideProps`.
+- Server-side data loaders with `getServerSideProps`, opt-in `revalidate` caching, and explicit `getCacheKey` isolation.
 - Static site generation (SSG) with `getStaticProps` and `getStaticPaths`.
 - Development server with React Fast Refresh, state-preserving HMR, browser error overlay, module graph inspection, and watched server route modules.
-- Production Node.js server for SSR and API routes, with validated `HOST`/`PORT` overrides and clear startup errors.
+- Production Node.js server for SSR and API routes, with validated `HOST`/`PORT` overrides, clear startup errors, and route-aware runtime diagnostics.
 - Validated route patterns and configuration, including duplicate route parameter and catch-all checks.
 - Static assets and generated HTML in `dist/`.
-- Fullstack client-side navigation with request-time loader refresh, browser Back/Forward support, and automatic same-origin route-data prefetching.
+- Fullstack client-side navigation with request-time loader refresh, abortable superseded requests, browser Back/Forward support, and automatic same-origin route-data prefetching.
 - Router URL state through `searchParams` and `hash`, with compatible shared layouts kept mounted across transitions.
 
 ## Requirements
@@ -351,7 +351,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.9.0 | Reliability & Data UX | Route error boundaries, abortable navigation, explicit server-loader cache/revalidation, and runtime diagnostics |
 | 1.0.0 | Production | Bundle optimization, production security hardening, reproducible benchmarks, and deployment guidance |
 
-### 0.9.0 planned scope
+### 0.9.0 implementation details
 
 Javafy 0.9.0 adds reliability-focused routing and data primitives:
 
