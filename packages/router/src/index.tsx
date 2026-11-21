@@ -9,6 +9,7 @@ import {
   useState,
   type AnchorHTMLAttributes,
   type ComponentType,
+  type ErrorInfo,
   type FocusEvent,
   type MouseEvent,
   type ReactNode
@@ -73,6 +74,10 @@ class RouteErrorBoundary extends Component<{
   reset = (): void => {
     this.setState({ error: null });
   };
+
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    console.error("[Javafy diagnostics] Route render failed for " + this.props.pathname, error, info.componentStack);
+  }
 
   render(): ReactNode {
     if (this.state.error) {
@@ -184,7 +189,7 @@ export function createRouter(options: {
   routes: JavafyRoute[];
   notFound?: ComponentType<JavafyPageProps>;
   initialPathname?: string;
-  loadData?: (url: URL) => Promise<JavafyNavigationData>;
+  loadData?: (url: URL, signal?: AbortSignal) => Promise<JavafyNavigationData>;
 }): ComponentType {
   const Router = function JavafyRouter() {
     const [location, setLocation] = useState<LocationSnapshot>(() =>
@@ -197,6 +202,7 @@ export function createRouter(options: {
     const [navigationData, setNavigationData] = useState<JavafyNavigationData | null>(null);
     const [isNavigating, setIsNavigating] = useState(false);
     const navigationId = useRef(0);
+    const activeNavigation = useRef<AbortController | null>(null);
     const prefetchedData = useRef(new Map<string, Promise<JavafyNavigationData>>());
 
     const prefetch = (to: string) => {
@@ -225,6 +231,8 @@ export function createRouter(options: {
       const update = async () => {
         const nextLocation = readBrowserLocation();
         const currentId = ++navigationId.current;
+        activeNavigation.current?.abort();
+        activeNavigation.current = null;
         setLocation(nextLocation);
         if (!options.loadData) {
           setNavigationData({ status: 200, props: {} });
@@ -232,18 +240,22 @@ export function createRouter(options: {
           return;
         }
         setIsNavigating(true);
+        const controller = new AbortController();
+        activeNavigation.current = controller;
         try {
           const url = new URL(window.location.href);
           const key = url.pathname + url.search;
           const cached = prefetchedData.current.get(key);
-          const result = await (cached ?? options.loadData(url));
+          const result = await (cached ?? options.loadData(url, controller.signal));
           prefetchedData.current.delete(key);
-          if (active && navigationId.current === currentId) {
+          if (active && navigationId.current === currentId && !controller.signal.aborted) {
+            activeNavigation.current = null;
             setNavigationData(result);
             setIsNavigating(false);
           }
         } catch (error) {
-          if (active && navigationId.current === currentId) {
+          if (active && navigationId.current === currentId && !controller.signal.aborted) {
+            activeNavigation.current = null;
             setNavigationData({
               status: 500,
               props: { __javafyNavigationError: error instanceof Error ? error.message : "Navigation failed" }
@@ -256,6 +268,8 @@ export function createRouter(options: {
       window.addEventListener(NAVIGATION_EVENT, update);
       return () => {
         active = false;
+        activeNavigation.current?.abort();
+        activeNavigation.current = null;
         window.removeEventListener("popstate", update);
         window.removeEventListener(NAVIGATION_EVENT, update);
       };

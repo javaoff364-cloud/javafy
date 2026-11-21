@@ -182,7 +182,7 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
           }),
           "  ],",
           ...(discovered.notFound ? [`  notFound: ${importFor(discovered.notFound)},`] : []),
-          `  loadData: async (url) => { const response = await fetch("/__javafy/data?url=" + encodeURIComponent(url.pathname + url.search), { headers: { Accept: "application/json" } }); if (!response.ok) throw new Error("Javafy navigation data request failed (" + response.status + ")."); return response.json(); },`,
+          `  loadData: async (url, signal) => { const response = await fetch("/__javafy/data?url=" + encodeURIComponent(url.pathname + url.search), { headers: { Accept: "application/json" }, signal }); if (!response.ok) throw new Error("Javafy navigation data request failed (" + response.status + ")."); return response.json(); },`,
           "});",
           'const root = document.getElementById("root");',
           'if (!root) throw new Error("Javafy: #root element was not found.");',
@@ -218,13 +218,15 @@ async function toWebRequest(request: IncomingMessage): Promise<Request> {
     else if (value !== undefined) headers.set(name, value);
   }
   const method = (request.method ?? "GET").toUpperCase();
+  const controller = new AbortController();
+  request.on("aborted", () => controller.abort());
   const chunks: Buffer[] = [];
   if (method !== "GET" && method !== "HEAD") {
     for await (const chunk of request) chunks.push(Buffer.from(chunk));
   }
   const body = chunks.length ? Buffer.concat(chunks) : undefined;
   const host = request.headers.host ?? "localhost";
-  const init: RequestInit = { method, headers };
+  const init: RequestInit = { method, headers, signal: controller.signal };
   if (body) init.body = body as unknown as BodyInit;
   return new Request("http://" + host + (request.url ?? "/"), init);
 }
@@ -248,7 +250,7 @@ async function sendNavigationData(
     if (target.origin !== endpoint.origin || target.pathname.startsWith("/__javafy/")) {
       return Response.json({ error: "Invalid navigation URL." }, { status: 400, headers: { "cache-control": "no-store" } });
     }
-    const pageRequest = new Request(target.href, { headers: incoming.headers });
+    const pageRequest = new Request(target.href, { headers: incoming.headers, signal: incoming.signal });
     const rendered = await renderFullstackPage(manifest, target.pathname, { request: pageRequest });
     return Response.json({ props: rendered?.props ?? {}, status: rendered?.status ?? 404 }, {
       headers: { "cache-control": "no-store" }

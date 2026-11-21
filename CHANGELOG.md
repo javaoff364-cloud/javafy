@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0 — Reliability & Data UX
+
+- Hardened file-based `error.tsx` boundaries with nearest-ancestor fallback and retry support across client rendering and server-rendered failure states.
+- Added abortable client navigation: a newer transition cancels the previous route-data request, and request abort signals reach server loaders through `request.signal`.
+- Added opt-in server-loader caching through `revalidate` and `getCacheKey`; only successful request-time loader results are cached.
+- Bounded the in-memory loader cache to 500 entries and documented cache-key safety requirements for user-specific data.
+- Added route-aware runtime diagnostics for loader and cache-key failures.
+- Added regression coverage for explicit cache reuse and default no-cache behavior.
+
+
 ## 0.8.0 — Request Middleware & Navigation UX
 
 - Added file-based route loading UI with `loading.tsx` for client-side navigation transitions.

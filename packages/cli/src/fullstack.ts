@@ -23,6 +23,8 @@ type PageModule = {
   getServerSideProps?: DataLoader;
   getStaticProps?: DataLoader;
   getStaticPaths?: () => Array<{ params: Record<string, string> }> | Promise<Array<{ params: Record<string, string> }>>;
+  revalidate?: number;
+  getCacheKey?: (context: DataContext) => string;
 };
 
 type LayoutModule = { default: ComponentType<JavafyLayoutProps> };
@@ -33,6 +35,8 @@ export interface FullstackPage extends RouteDefinition {
   getServerSideProps?: DataLoader;
   getStaticProps?: DataLoader;
   getStaticPaths?: PageModule["getStaticPaths"];
+  revalidate?: number;
+  getCacheKey?: PageModule["getCacheKey"];
   loading?: ComponentType<JavafyPageProps>;
   error?: ComponentType<JavafyErrorProps>;
 }
@@ -53,6 +57,14 @@ export interface DiscoveredFiles {
 }
 
 const methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"] as const;
+
+interface LoaderCacheEntry {
+  expiresAt: number;
+  props: Record<string, unknown>;
+}
+
+const loaderCache = new Map<string, LoaderCacheEntry>();
+const MAX_LOADER_CACHE_ENTRIES = 500;
 
 function routeSegment(segment: string): string {
   if (/^\[\[\.\.\.[^\]]+\]\]$/.test(segment)) return "*" + segment.slice(5, -2) + "?";
@@ -159,7 +171,7 @@ export async function buildFullstackManifest(
       const layouts = page.layouts.map((file) => `${importFor(file)}.default`);
       const loading = page.loading ? `${importFor(page.loading)}.default` : "undefined";
       const error = page.error ? `${importFor(page.error)}.default` : "undefined";
-      return `  { path: ${JSON.stringify(page.path)}, component: ${mod}.default, layouts: [${layouts.join(", ")}], loading: ${loading}, error: ${error}, getServerSideProps: ${mod}.getServerSideProps, getStaticProps: ${mod}.getStaticProps, getStaticPaths: ${mod}.getStaticPaths },`;
+      return `  { path: ${JSON.stringify(page.path)}, component: ${mod}.default, layouts: [${layouts.join(", ")}], loading: ${loading}, error: ${error}, getServerSideProps: ${mod}.getServerSideProps, getStaticProps: ${mod}.getStaticProps, getStaticPaths: ${mod}.getStaticPaths, revalidate: ${mod}.revalidate, getCacheKey: ${mod}.getCacheKey },`;
     }),
     "];",
     "export const apiRoutes = [",
@@ -241,12 +253,37 @@ export async function renderFullstackPage(
   };
   let props: Record<string, unknown> = {};
   const loader = options.static ? page.getStaticProps : page.getServerSideProps ?? page.getStaticProps;
-  if (loader) {
+  let cacheKey: string | undefined;
+  const cacheSeconds = !options.static && page.getServerSideProps &&
+    Number.isInteger(page.revalidate) && (page.revalidate ?? 0) > 0 && page.getCacheKey
+    ? Math.floor(page.revalidate as number)
+    : 0;
+  if (cacheSeconds > 0 && page.getCacheKey) {
+    try {
+      const customKey = page.getCacheKey(context);
+      if (typeof customKey === "string" && customKey.trim()) cacheKey = page.path + ":" + JSON.stringify(matched.params) + ":" + customKey;
+    } catch (error) {
+      console.error("[Javafy diagnostics] getCacheKey failed for " + page.path, error);
+    }
+  }
+  const cacheEntry = cacheKey ? loaderCache.get(cacheKey) : undefined;
+  const cached = cacheEntry && cacheEntry.expiresAt > Date.now() ? cacheEntry : undefined;
+  if (cached) props = cached.props;
+  else if (cacheEntry && cacheKey) loaderCache.delete(cacheKey);
+  if (loader && !cached) {
     try {
       const result = await loader(context);
       if (result && typeof result === "object") props = result;
+      if (cacheKey && cacheSeconds > 0 && !options.request?.signal.aborted) {
+        if (loaderCache.size >= MAX_LOADER_CACHE_ENTRIES) {
+          const oldest = loaderCache.keys().next().value;
+          if (oldest !== undefined) loaderCache.delete(oldest);
+        }
+        loaderCache.set(cacheKey, { props, expiresAt: Date.now() + cacheSeconds * 1000 });
+      }
     } catch (caught) {
       const error = caught instanceof Error ? caught : new Error(String(caught));
+      console.error("[Javafy diagnostics] Server data loader failed for " + page.path, error);
       const fallback = page.error
         ? createElement(page.error, { error, reset: () => {}, params: matched.params, pathname: matched.pathname })
         : createElement("main", { role: "alert" },
@@ -275,6 +312,7 @@ export async function renderFullstackPage(
     return { html: renderToString(createElement(Router)), props, status: 200 };
   } catch (caught) {
     const error = caught instanceof Error ? caught : new Error(String(caught));
+    console.error("[Javafy diagnostics] Server render failed for " + page.path, error);
     const fallback = page.error
       ? createElement(page.error, { error, reset: () => {}, params: matched.params, pathname: matched.pathname })
       : createElement("main", { role: "alert" },

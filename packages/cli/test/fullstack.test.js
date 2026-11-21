@@ -80,6 +80,8 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     export default function PostPage({ params, title }) {
       return <article><h1>{title}</h1><p>{params.slug}</p></article>;
     }
+    export const revalidate = 30;
+    export function getCacheKey({ params }) { return params.slug; }
     export async function getServerSideProps({ params }) {
       return { title: "SSR: " + params.slug };
     }
@@ -119,6 +121,8 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     assert.match(serverPage.html, /Fixture layout/);
     assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").loading, "function");
     assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").error, "function");
+    assert.equal(manifest.pages.find((page) => page.path === "/posts/:slug").revalidate, 30);
+    assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").getCacheKey, "function");
 
     const brokenManifest = {
       ...manifest,
@@ -240,4 +244,81 @@ test("discovers and loads app middleware for API requests", async () => {
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+
+test("server loader cache is opt-in, keyed, and reused within its revalidation window", async () => {
+  let calls = 0;
+  const manifest = {
+    pages: [{
+      path: "/cached/:id", component: () => null, layouts: [], revalidate: 30,
+      getCacheKey: ({ params }) => params.id,
+      getServerSideProps: async ({ params }) => ({ id: params.id, call: ++calls })
+    }],
+    apiRoutes: []
+  };
+  const first = await renderFullstackPage(manifest, "/cached/one", {
+    request: new Request("http://localhost/cached/one")
+  });
+  const second = await renderFullstackPage(manifest, "/cached/one", {
+    request: new Request("http://localhost/cached/one")
+  });
+  assert.deepEqual(first.props, { id: "one", call: 1 });
+  assert.deepEqual(second.props, { id: "one", call: 1 });
+  assert.equal(calls, 1);
+});
+
+test("server loader results are not cached without an explicit cache key and revalidate value", async () => {
+  let calls = 0;
+  const manifest = {
+    pages: [{
+      path: "/uncached", component: () => null, layouts: [],
+      getServerSideProps: async () => ({ call: ++calls })
+    }],
+    apiRoutes: []
+  };
+  await renderFullstackPage(manifest, "/uncached", { request: new Request("http://localhost/uncached") });
+  await renderFullstackPage(manifest, "/uncached", { request: new Request("http://localhost/uncached") });
+  assert.equal(calls, 2);
+});
+
+
+test("server loader cache expires after the configured revalidation interval", async () => {
+  let calls = 0;
+  const manifest = {
+    pages: [{
+      path: "/expiring", component: () => null, layouts: [], revalidate: 1,
+      getCacheKey: () => "stable",
+      getServerSideProps: async () => ({ call: ++calls })
+    }],
+    apiRoutes: []
+  };
+  const request = () => new Request("http://localhost/expiring");
+  await renderFullstackPage(manifest, "/expiring", { request: request() });
+  await new Promise((resolve) => setTimeout(resolve, 1050));
+  const refreshed = await renderFullstackPage(manifest, "/expiring", { request: request() });
+  assert.equal(calls, 2);
+  assert.deepEqual(refreshed.props, { call: 2 });
+});
+
+test("server loader receives the navigation request abort signal", async () => {
+  let receivedSignal;
+  const controller = new AbortController();
+  const manifest = {
+    pages: [{
+      path: "/signal", component: () => null, layouts: [],
+      getServerSideProps: async ({ request }) => {
+        receivedSignal = request.signal;
+        return { ok: true };
+      }
+    }],
+    apiRoutes: []
+  };
+  await renderFullstackPage(manifest, "/signal", {
+    request: new Request("http://localhost/signal", { signal: controller.signal })
+  });
+  assert.ok(receivedSignal);
+  assert.equal(receivedSignal.aborted, false);
+  controller.abort();
+  assert.equal(receivedSignal.aborted, true);
 });
