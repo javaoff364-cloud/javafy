@@ -61,3 +61,15 @@ test("does not leak thrown exception details to API clients", async () => {
   assert.equal(payload.message, "An unexpected error occurred.");
   assert.doesNotMatch(JSON.stringify(payload), /database password/);
 });
+
+test("explicit OPTIONS handlers include Allow header", async () => {
+  const explicitRouter = createApiRouter([{
+    path: "/api/options",
+    GET: () => Response.json({ ok: true }),
+    OPTIONS: () => new Response(null, { status: 200 })
+  }]);
+  const response = await explicitRouter(new Request("http://localhost/api/options", { method: "OPTIONS" }));
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("allow"), /GET/);
+  assert.match(response.headers.get("allow"), /OPTIONS/);
+});
