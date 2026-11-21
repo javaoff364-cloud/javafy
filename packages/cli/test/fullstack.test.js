@@ -12,7 +12,9 @@ test("discovers page, nested layout, and API route files", () => {
   mkdirSync(join(app, "reports"), { recursive: true });
   mkdirSync(join(app, "api", "users", "[id]"), { recursive: true });
   writeFileSync(join(app, "loading.tsx"), "export default function RootLoading() { return null }");
+  writeFileSync(join(app, "error.tsx"), "export default function RootError() { return null }");
   writeFileSync(join(app, "dashboard", "loading.tsx"), "export default function DashboardLoading() { return null }");
+  writeFileSync(join(app, "dashboard", "error.tsx"), "export default function DashboardError() { return null }");
   writeFileSync(join(app, "layout.tsx"), "export default function Layout({children}) { return children }");
   writeFileSync(join(app, "dashboard", "layout.tsx"), "export default function DashboardLayout({children}) { return children }");
   writeFileSync(join(app, "dashboard", "page.tsx"), "export default function Dashboard() { return null }");
@@ -28,6 +30,9 @@ test("discovers page, nested layout, and API route files", () => {
     assert.equal(found.pages.find((page) => page.path === "/dashboard").loading, join(app, "dashboard", "loading.tsx"));
     assert.equal(found.pages.find((page) => page.path === "/dashboard/settings").loading, join(app, "dashboard", "loading.tsx"));
     assert.equal(found.pages.find((page) => page.path === "/reports").loading, join(app, "loading.tsx"));
+    assert.equal(found.pages.find((page) => page.path === "/dashboard").error, join(app, "dashboard", "error.tsx"));
+    assert.equal(found.pages.find((page) => page.path === "/dashboard/settings").error, join(app, "dashboard", "error.tsx"));
+    assert.equal(found.pages.find((page) => page.path === "/reports").error, join(app, "error.tsx"));
     assert.equal(found.api.length, 1);
     assert.equal(found.api[0].path, "/api/users/:id");
   } finally {
@@ -65,6 +70,11 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
   `);
   writeFileSync(join(app, "posts", "[slug]", "loading.tsx"), `
     export default function Loading() { return <p>Loading post</p>; }
+  `);
+  writeFileSync(join(app, "posts", "[slug]", "error.tsx"), `
+    export default function PostError({ error, reset }) {
+      return <section role="alert"><h1>Post failed</h1><p>{error.message}</p><button onClick={reset}>Retry</button></section>;
+    }
   `);
   writeFileSync(join(app, "posts", "[slug]", "page.tsx"), `
     export default function PostPage({ params, title }) {
@@ -108,6 +118,18 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     assert.match(serverPage.html, /SSR: hello/);
     assert.match(serverPage.html, /Fixture layout/);
     assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").loading, "function");
+    assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").error, "function");
+
+    const brokenManifest = {
+      ...manifest,
+      pages: manifest.pages.map((entry) => entry.path === "/posts/:slug"
+        ? { ...entry, component: () => { throw new Error("fixture render failure"); } }
+        : entry)
+    };
+    const failedPage = await renderFullstackPage(brokenManifest, "/posts/broken");
+    assert.equal(failedPage.status, 500);
+    assert.match(failedPage.html, /Post failed/);
+    assert.match(failedPage.html, /fixture render failure/);
 
     assert.deepEqual(await getStaticRoutePaths(manifest), ["/static/prebuilt"]);
     const staticPage = await renderFullstackPage(manifest, "/static/prebuilt", { static: true });
