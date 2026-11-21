@@ -218,14 +218,14 @@ async function toWebRequest(request: IncomingMessage): Promise<Request> {
     else if (value !== undefined) headers.set(name, value);
   }
   const method = (request.method ?? "GET").toUpperCase();
+  const controller = new AbortController();
+  request.on("aborted", () => controller.abort());
   const chunks: Buffer[] = [];
   if (method !== "GET" && method !== "HEAD") {
     for await (const chunk of request) chunks.push(Buffer.from(chunk));
   }
   const body = chunks.length ? Buffer.concat(chunks) : undefined;
   const host = request.headers.host ?? "localhost";
-  const controller = new AbortController();
-  request.on("aborted", () => controller.abort());
   const init: RequestInit = { method, headers, signal: controller.signal };
   if (body) init.body = body as unknown as BodyInit;
   return new Request("http://" + host + (request.url ?? "/"), init);
