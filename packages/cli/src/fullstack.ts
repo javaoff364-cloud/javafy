@@ -261,7 +261,7 @@ export async function renderFullstackPage(
   if (cacheSeconds > 0 && page.getCacheKey) {
     try {
       const customKey = page.getCacheKey(context);
-      if (typeof customKey === "string" && customKey.trim()) cacheKey = page.path + ":" + customKey;
+      if (typeof customKey === "string" && customKey.trim()) cacheKey = page.path + ":" + JSON.stringify(matched.params) + ":" + customKey;
     } catch (error) {
       console.error("[Javafy diagnostics] getCacheKey failed for " + page.path, error);
     }
