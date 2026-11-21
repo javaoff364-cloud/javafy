@@ -1,6 +1,6 @@
 {
   "name": "@javafy/core",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Core types and utilities for Javafy.",
   "license": "MIT",
   "type": "module",

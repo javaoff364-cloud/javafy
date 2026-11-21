@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import type { Server } from "node:http";
 import { readFile } from "node:fs/promises";
 import { dirname, relative, resolve, sep } from "node:path";
 import type { Metafile, Message, Plugin } from "esbuild";
@@ -200,7 +201,7 @@ export interface JavafyServerOptions {
 
 /** Resolve and validate production server host/port overrides. */
 export function resolveServerOptions(
-  config: { dev: { host: string; port: number } },
+  config: { dev: { host?: string; port?: number } },
   env: { HOST?: string; PORT?: string } = {}
 ): JavafyServerOptions {
   const host = env.HOST ?? config.dev.host;
@@ -208,8 +209,31 @@ export function resolveServerOptions(
   if (typeof host !== "string" || host.trim() === "") {
     throw new Error("Javafy: HOST must be a non-empty hostname or IP address.");
   }
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  if (typeof port !== "number" || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error("Javafy: PORT must be an integer between 1 and 65535.");
   }
   return { host, port };
+}
+
+
+/** Listen on a host/port and provide actionable startup errors. */
+export function listenServer(server: Server, port: number, host: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onError = (error: NodeJS.ErrnoException) => {
+      server.off("listening", onListening);
+      const message = error.code === "EADDRINUSE"
+        ? `Javafy: port ${port} is already in use. Stop the other process or set PORT to a free port.`
+        : error.code === "EACCES"
+          ? `Javafy: permission denied while binding ${host}:${port}. Try another port or host.`
+          : `Javafy: could not start server on ${host}:${port}: ${error.message}`;
+      reject(new Error(message, { cause: error }));
+    };
+    const onListening = () => {
+      server.off("error", onError);
+      resolve();
+    };
+    server.once("error", onError);
+    server.once("listening", onListening);
+    server.listen(port, host);
+  });
 }

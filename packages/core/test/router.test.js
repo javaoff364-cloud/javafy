@@ -75,3 +75,29 @@ test("skips invalid route patterns instead of matching them", async () => {
   assert.equal(isValidRoutePattern("/users/:id/:id"), false);
   assert.equal(matchRoute("/users/a/b", [{ path: "/users/:id/:id" }, { path: "/users/:first/:second" }])?.route.path, "/users/:first/:second");
 });
+
+
+test("ignores query and fragment when matching pathname", () => {
+  const routes = [{ path: "/blog/:id" }];
+  assert.equal(matchRoute("/blog/post-1?preview=true#comments", routes)?.params.id, "post-1");
+});
+
+test("matches a static route when encoded characters are present", () => {
+  const routes = [{ path: "/café" }, { path: "/:slug" }];
+  assert.equal(matchRoute("/caf%C3%A9", routes)?.route.path, "/café");
+});
+
+test("rejects malformed percent encoding in catch-all parameters", () => {
+  const routes = [{ path: "/docs/*slug" }];
+  assert.equal(matchRoute("/docs/%E0%A4%A", routes), null);
+});
+
+test("prefers a longer static route over a shorter dynamic route", () => {
+  const routes = [{ path: "/:section" }, { path: "/docs/api" }];
+  assert.equal(matchRoute("/docs/api", routes)?.route.path, "/docs/api");
+});
+
+test("does not match extra path segments on non-catch-all routes", () => {
+  const routes = [{ path: "/blog/:id" }];
+  assert.equal(matchRoute("/blog/post-1/comments", routes), null);
+});

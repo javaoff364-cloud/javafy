@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createDevClientScript, createModuleGraph, serializeBuildErrors } from "../dist/runtime.js";
+import { createServer } from "node:http";
+import { createDevClientScript, createModuleGraph, listenServer, serializeBuildErrors } from "../dist/runtime.js";
 
 test("creates a stable module graph and excludes external imports", () => {
   const graph = createModuleGraph({
@@ -58,4 +59,19 @@ test("rejects invalid production server overrides", async () => {
     assert.throws(() => resolveServerOptions({ dev: { host: "localhost", port: 3000 } }, { PORT }), /PORT must be an integer between 1 and 65535/);
   }
   assert.throws(() => resolveServerOptions({ dev: { host: "localhost", port: 3000 } }, { HOST: "" }), /HOST must be a non-empty hostname or IP address/);
+});
+
+
+test("starts on an available port and reports an occupied port clearly", async () => {
+  const occupied = createServer();
+  await listenServer(occupied, 0, "127.0.0.1");
+  const address = occupied.address();
+  assert.ok(address && typeof address === "object");
+
+  const contender = createServer();
+  await assert.rejects(
+    listenServer(contender, address.port, "127.0.0.1"),
+    /port .* is already in use/
+  );
+  await new Promise((resolve, reject) => occupied.close((error) => error ? reject(error) : resolve()));
 });
