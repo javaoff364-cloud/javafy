@@ -4,7 +4,7 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 0.8.0 is the current development version.
+> Javafy 0.8.0 is the current release candidate.
 
 ## Features
 
@@ -12,7 +12,7 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 - React 19 application runtime.
 - File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), nested layouts, and route-level loading UI.
 - File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
-- File-based API middleware with ordered execution, short-circuit responses, and request replacement.
+- File-based request middleware for API, SSR, and client-navigation data requests, with ordered execution, short-circuit responses, and request replacement.
 - Server-side rendering (SSR) for page requests.
 - Server-side data loaders with `getServerSideProps`.
 - Static site generation (SSG) with `getStaticProps` and `getStaticPaths`.
@@ -138,7 +138,7 @@ export async function PUT(request: Request, { params }: Context) {
 
 Javafy automatically matches dynamic API parameters, returns 404 for unknown endpoints, 405 with an `Allow` header for unsupported methods, supports `HEAD` via `GET` fallback, and responds to `OPTIONS`. Unhandled handler errors become JSON 500 responses.
 
-## API middleware
+## Request middleware
 
 Create `src/app/middleware.ts` to run middleware before file-based API routes, server-rendered page requests, and client-navigation data requests. Export one default middleware function:
 
@@ -288,7 +288,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.5.0 | Runtime | React Fast Refresh, HMR, error overlay, module graph |
 | 0.6.0 | Stability | Router/config validation, API hardening, production server validation, startup diagnostics and regression tests |
 | 0.7.0 | Client Navigation | SPA/fullstack client transitions, server-loader refresh, router URL state, browser history integration and navigation regression coverage |
-| 0.8.0 | API Middleware | File-based middleware discovery, composable request pipeline, API integration and regression coverage |
+| 0.8.0 | Request Middleware & Navigation UX | Composable middleware across API/SSR/navigation requests, route-level loading UI, and regression coverage |
 | 1.0.0 | Production | Optimizer, caching, security, benchmarks |
 
 ## Performance
