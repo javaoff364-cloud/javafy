@@ -4,7 +4,7 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 0.8.0 is the current stable release.
+> Javafy 0.9.0 is the current stable release.
 
 ## Features
 
@@ -110,6 +110,26 @@ export default function Loading() {
 ```
 
 The loading component is rendered inside the route's shared layouts and is only shown during client-side data transitions; initial SSR/SSG rendering remains unchanged.
+
+### Route error UI
+
+Add `error.tsx` beside a page to provide a route error boundary. A root `src/app/error.tsx` is inherited by descendants; the nearest ancestor error file takes precedence. The component receives `error`, `reset`, `params`, and `pathname`:
+
+```tsx
+import type { JavafyErrorProps } from "@javafy/router";
+
+export default function ErrorPage({ error, reset }: JavafyErrorProps) {
+  return (
+    <main role="alert">
+      <h1>Something went wrong</h1>
+      <p>{error.message}</p>
+      <button onClick={reset}>Try again</button>
+    </main>
+  );
+}
+```
+
+The same nearest-route fallback is used for server loader and server-render failures. Keep error messages safe to display; detailed diagnostics are written to the server log.
 
 ### Route error UI
 
