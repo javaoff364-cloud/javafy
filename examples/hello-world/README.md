@@ -1,6 +1,6 @@
 # Hello Javafy
 
-A minimal static example for the Javafy 0.1.0 foundation.
+A fullstack example covering file-based routing, request middleware, SSR/SSG, and route-level loading UI for Javafy 0.8.0.
 
 From the Javafy repository root:
 
