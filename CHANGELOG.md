@@ -2,6 +2,8 @@
 
 ## 0.8.0 — API Middleware
 
+- Added file-based route loading UI with `loading.tsx` for client-side navigation transitions.
+- Added inherited root loading UI and route-specific override behavior; loading UI renders inside shared layouts.
 - Added a composable request middleware pipeline to the server package.
 - Added file-based middleware discovery through `src/app/middleware.ts`.
 - Applied middleware to API routes, SSR page requests, and client-navigation data requests in development and production servers.
