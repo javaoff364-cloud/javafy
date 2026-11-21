@@ -13,6 +13,7 @@ test("discovers page, nested layout, and API route files", () => {
   writeFileSync(join(app, "layout.tsx"), "export default function Layout({children}) { return children }");
   writeFileSync(join(app, "dashboard", "layout.tsx"), "export default function DashboardLayout({children}) { return children }");
   writeFileSync(join(app, "dashboard", "page.tsx"), "export default function Dashboard() { return null }");
+  writeFileSync(join(app, "dashboard", "loading.tsx"), "export default function Loading() { return <p>Loading dashboard</p> }");
   writeFileSync(join(app, "api", "users", "[id]", "route.ts"), "export function GET() { return Response.json({ ok: true }) }");
 
   try {
@@ -20,6 +21,7 @@ test("discovers page, nested layout, and API route files", () => {
     assert.equal(found.pages.length, 1);
     assert.equal(found.pages[0].path, "/dashboard");
     assert.equal(found.pages[0].layouts.length, 2);
+    assert.equal(found.pages[0].loading, join(app, "dashboard", "loading.tsx"));
     assert.equal(found.api.length, 1);
     assert.equal(found.api[0].path, "/api/users/:id");
   } finally {
@@ -96,6 +98,7 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     assert.equal(serverPage.status, 200);
     assert.match(serverPage.html, /SSR: hello/);
     assert.match(serverPage.html, /Fixture layout/);
+    assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").loading, "undefined");
 
     assert.deepEqual(await getStaticRoutePaths(manifest), ["/static/prebuilt"]);
     const staticPage = await renderFullstackPage(manifest, "/static/prebuilt", { static: true });
