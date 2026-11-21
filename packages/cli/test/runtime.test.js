@@ -45,3 +45,17 @@ test("dev client listens for compilation errors and HMR updates", () => {
   assert.ok(script.includes('addEventListener("hmr"'));
   assert.ok(script.includes("/@javafy/app.js"));
 });
+
+test("resolves production server defaults and valid overrides", async () => {
+  const { resolveServerOptions } = await import("../dist/runtime.js");
+  assert.deepEqual(resolveServerOptions({ dev: { host: "localhost", port: 3000 } }), { host: "localhost", port: 3000 });
+  assert.deepEqual(resolveServerOptions({ dev: { host: "localhost", port: 3000 } }, { HOST: "0.0.0.0", PORT: "8080" }), { host: "0.0.0.0", port: 8080 });
+});
+
+test("rejects invalid production server overrides", async () => {
+  const { resolveServerOptions } = await import("../dist/runtime.js");
+  for (const PORT of ["0", "-1", "65536", "3.14", "abc", ""]) {
+    assert.throws(() => resolveServerOptions({ dev: { host: "localhost", port: 3000 } }, { PORT }), /PORT must be an integer between 1 and 65535/);
+  }
+  assert.throws(() => resolveServerOptions({ dev: { host: "localhost", port: 3000 } }, { HOST: "" }), /HOST must be a non-empty hostname or IP address/);
+});
