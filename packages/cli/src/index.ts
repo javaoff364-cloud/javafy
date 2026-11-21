@@ -246,7 +246,7 @@ async function sendNavigationData(
     const pageRequest = new Request(target.href, { headers: incoming.headers });
     const rendered = await renderFullstackPage(manifest, target.pathname, { request: pageRequest });
     response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-    response.end(JSON.stringify({ props: rendered?.props ?? {}, status: rendered?.status ?? 404 }).replace(/</g, "\\\\u003c"));
+    response.end(JSON.stringify({ props: rendered?.props ?? {}, status: rendered?.status ?? 404 }).replace(/</g, "\\u003c"));
   } catch (error) {
     console.error("Javafy: navigation data request failed", error);
     response.writeHead(500, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
@@ -254,10 +254,12 @@ async function sendNavigationData(
   }
 }
 
+
 function renderHtmlDocument(
   shell: string,
   body: string,
-  pathname: string,  props: Record<string, unknown>,
+  pathname: string,
+  props: Record<string, unknown>,
   scriptPath: string,
   liveReload = false
 ): string {
@@ -288,7 +290,8 @@ function sendText(response: ServerResponse, status: number, message: string): vo
 function injectDevScripts(html: string): string {
   if (html.includes("/@javafy/app.js")) return html;
   const scripts = [
-    '<script src="/__javafy/client.js"></script>',    '<script type="module" src="/__javafy/refresh-preamble.js"></script>',
+    '<script src="/__javafy/client.js"></script>',
+    '<script type="module" src="/__javafy/refresh-preamble.js"></script>',
     '<script type="module" src="/@javafy/app.js"></script>'
   ].join("\n");
   return html.includes("</body>")
@@ -517,6 +520,7 @@ async function dev(): Promise<void> {
       response.writeHead(403).end("Forbidden");
       return;
     }
+
     if (existsSync(target) && statSync(target).isDirectory()) target = join(target, "index.html");
     const isRouterShell = entryConfig.usesRouter && pathname === "/" && relative === "index.html";
     if (!isRouterShell && existsSync(target) && statSync(target).isFile()) {
@@ -551,7 +555,8 @@ async function dev(): Promise<void> {
           response.writeHead(rendered ? rendered.status : 404, { "content-type": "text/html; charset=utf-8" });
           response.end(request.method === "HEAD" ? undefined : document);
           return;
-        } catch (error) {          sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");
+        } catch (error) {
+          sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");
           return;
         }
       }
