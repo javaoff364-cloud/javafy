@@ -241,3 +241,39 @@ test("discovers and loads app middleware for API requests", async () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+
+test("server loader cache is opt-in, keyed, and reused within its revalidation window", async () => {
+  let calls = 0;
+  const manifest = {
+    pages: [{
+      path: "/cached/:id", component: () => null, layouts: [], revalidate: 30,
+      getCacheKey: ({ params }) => params.id,
+      getServerSideProps: async ({ params }) => ({ id: params.id, call: ++calls })
+    }],
+    apiRoutes: []
+  };
+  const first = await renderFullstackPage(manifest, "/cached/one", {
+    request: new Request("http://localhost/cached/one")
+  });
+  const second = await renderFullstackPage(manifest, "/cached/one", {
+    request: new Request("http://localhost/cached/one")
+  });
+  assert.deepEqual(first.props, { id: "one", call: 1 });
+  assert.deepEqual(second.props, { id: "one", call: 1 });
+  assert.equal(calls, 1);
+});
+
+test("server loader results are not cached without an explicit cache key and revalidate value", async () => {
+  let calls = 0;
+  const manifest = {
+    pages: [{
+      path: "/uncached", component: () => null, layouts: [],
+      getServerSideProps: async () => ({ call: ++calls })
+    }],
+    apiRoutes: []
+  };
+  await renderFullstackPage(manifest, "/uncached", { request: new Request("http://localhost/uncached") });
+  await renderFullstackPage(manifest, "/uncached", { request: new Request("http://localhost/uncached") });
+  assert.equal(calls, 2);
+});
