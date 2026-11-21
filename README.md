@@ -4,7 +4,7 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 0.6.0 is an early runtime release. APIs may evolve before 1.0.
+> Javafy 0.6.0 is the latest stable release. The 0.7.0 navigation work is in development.
 
 ## 0.6.0 features
 
@@ -193,13 +193,16 @@ export function Navigation() {
   return (
     <>
       <Link href="/about">About</Link>
-      <button onClick={() => router.navigate("/")}>Home</button>
+      <button onClick={() => router.navigate("/?tab=home")}>Home</button>
+      <p>Current tab: {router.searchParams.get("tab") ?? "default"}</p>
     </>
   );
 }
 ```
 
-`useRouter()` exposes `pathname`, `params`, `navigate()`, `back()`, and `forward()`. In fullstack mode, same-origin navigation performs a document request so server-loaded props stay fresh. Modified clicks and external links retain normal browser behavior.
+`useRouter()` exposes `pathname`, `params`, `searchParams`, `hash`, `navigate()`, `back()`, and `forward()`. In SPA mode, query-string and hash-only navigation update router state without a document reload. Modified clicks and external links retain normal browser behavior.
+
+In fullstack mode, same-origin navigation still performs a document request so server-loaded props stay fresh. State-preserving fullstack client transitions are part of the 0.7.0 development milestone and are not yet available.
 
 ## Build and run
 
@@ -229,7 +232,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 ## Current limitations
 
-- Fullstack navigation uses document requests to refresh server data; state-preserving client transitions are planned for a later runtime milestone.
+- Fullstack navigation still uses document requests to refresh server data; state-preserving client transitions are in development.
 - `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
 - Streaming SSR, middleware, route-level loading/error boundaries, and incremental regeneration are not included yet. React Fast Refresh is development-only.
 - API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
@@ -244,6 +247,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.4.0 | Fullstack Engine | API routes, SSR, SSG, server data loaders |
 | 0.5.0 | Runtime | React Fast Refresh, HMR, error overlay, module graph |
 | 0.6.0 | Stability | Router/config validation, API hardening, production server validation, startup diagnostics and regression tests |
+| 0.7.0 | Client Navigation (in development) | State-preserving fullstack transitions, router URL state, navigation UX and developer experience |
 | 1.0.0 | Production | Optimizer, caching, security, benchmarks |
 
 ## Performance
