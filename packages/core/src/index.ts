@@ -22,7 +22,7 @@ export function defineConfig(config: JavafyConfig): JavafyConfig {
 }
 
 export function resolveConfig(config: JavafyConfig = {}): Required<JavafyConfig> {
-  return {
+  const resolved: Required<JavafyConfig> = {
     name: config.name ?? defaultConfig.name,
     dev: {
       host: config.dev?.host ?? defaultConfig.dev.host,
@@ -31,6 +31,22 @@ export function resolveConfig(config: JavafyConfig = {}): Required<JavafyConfig>
     publicDir: config.publicDir ?? defaultConfig.publicDir,
     appDir: config.appDir ?? defaultConfig.appDir
   };
+
+  if (typeof resolved.name !== "string" || resolved.name.trim() === "") {
+    throw new Error("Javafy config: name must be a non-empty string.");
+  }
+  if (typeof resolved.dev.host !== "string" || resolved.dev.host.trim() === "") {
+    throw new Error("Javafy config: dev.host must be a non-empty string.");
+  }
+  if (!Number.isInteger(resolved.dev.port) || resolved.dev.port < 1 || resolved.dev.port > 65535) {
+    throw new Error("Javafy config: dev.port must be an integer between 1 and 65535.");
+  }
+  for (const [key, value] of [["publicDir", resolved.publicDir], ["appDir", resolved.appDir]] as const) {
+    if (typeof value !== "string" || value.trim() === "") {
+      throw new Error("Javafy config: " + key + " must be a non-empty path string.");
+    }
+  }
+  return resolved;
 }
 
 export { matchRoute, type RouteDefinition, type RouteMatch } from "./router.js";
