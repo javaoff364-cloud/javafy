@@ -27,8 +27,11 @@ function allowedMethods(route: ApiRouteDefinition): ApiMethod[] {
 }
 
 /** Creates a Web Request/Response API dispatcher for static and dynamic route patterns. */
-export function createApiRouter(routes: readonly ApiRouteDefinition[]) {
-  return async function handleApiRequest(request: Request): Promise<Response> {
+export function createApiRouter(
+  routes: readonly ApiRouteDefinition[],
+  middleware: readonly JavafyMiddleware[] = []
+) {
+  const handleApiRequest = async function handleApiRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const match = matchRoute(url.pathname, routes);
     if (!match) {
@@ -75,5 +78,67 @@ export function createApiRouter(routes: readonly ApiRouteDefinition[]) {
         { status: 500 }
       );
     }
+  };
+
+  return createMiddlewareHandler(middleware, handleApiRequest);
+}
+
+
+/**
+ * A request middleware receives the current Web Request and may either return
+ * a Response or pass control to the next middleware/route handler.
+ *
+ * Passing a replacement Request to next() lets middleware rewrite request
+ * metadata without mutating the original Request.
+ */
+export type MiddlewareNext = (request?: Request) => Promise<Response>;
+export type JavafyMiddleware = (
+  request: Request,
+  next: MiddlewareNext
+) => Response | Promise<Response>;
+
+/**
+ * Composes request middleware into a single Web Request handler.
+ *
+ * Middleware executes in registration order on the way in and reverse order
+ * on the way out. A middleware may short-circuit by returning a Response
+ * without calling next(). Calling next() more than once is rejected.
+ */
+export function createMiddlewareHandler(
+  middleware: readonly JavafyMiddleware[],
+  handler: (request: Request) => Response | Promise<Response>
+): (request: Request) => Promise<Response> {
+  return async function handleRequest(request: Request): Promise<Response> {
+    const dispatch = async (index: number, currentRequest: Request): Promise<Response> => {
+      if (index === middleware.length) {
+        const response = await handler(currentRequest);
+        if (!(response instanceof Response)) {
+          throw new TypeError("Javafy request handlers must return a Web Response.");
+        }
+        return response;
+      }
+
+      const current = middleware[index];
+      if (!current) {
+        throw new Error("Javafy middleware pipeline is invalid.");
+      }
+
+      let nextCalled = false;
+      const next: MiddlewareNext = async (replacementRequest) => {
+        if (nextCalled) {
+          throw new Error("Javafy middleware next() may only be called once.");
+        }
+        nextCalled = true;
+        return dispatch(index + 1, replacementRequest ?? currentRequest);
+      };
+
+      const response = await current(currentRequest, next);
+      if (!(response instanceof Response)) {
+        throw new TypeError("Javafy middleware must return a Web Response.");
+      }
+      return response;
+    };
+
+    return dispatch(0, request);
   };
 }

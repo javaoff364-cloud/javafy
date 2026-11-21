@@ -308,7 +308,7 @@ async function dev(): Promise<void> {
   const manifestFile = resolve(root, ".javafy/server-manifest.mjs");
   await buildFullstackManifest(root, appDir, manifestFile);
   let manifest = await loadFullstackManifest(manifestFile);
-  let apiHandler = createApiRouter(manifest.apiRoutes);
+  let apiHandler = createApiRouter(manifest.apiRoutes, manifest.middleware ? [manifest.middleware] : []);
   const clients = new Set<ServerResponse>();
   const devOutputDirectory = resolve(root, ".javafy/dev");
   let devOutputFiles = new Map<string, Uint8Array>();
@@ -405,7 +405,7 @@ async function dev(): Promise<void> {
             try {
               await buildFullstackManifest(root, appDir, manifestFile);
               manifest = await loadFullstackManifest(manifestFile);
-              apiHandler = createApiRouter(manifest.apiRoutes);
+              apiHandler = createApiRouter(manifest.apiRoutes, manifest.middleware ? [manifest.middleware] : []);
               syncManifestWatchers();
               console.log("  Javafy: server routes refreshed");
             } catch (error) {
@@ -662,7 +662,7 @@ async function start(): Promise<void> {
     return;
   }
   const manifest = await loadFullstackManifest(manifestFile);
-  const apiHandler = createApiRouter(manifest.apiRoutes);
+  const apiHandler = createApiRouter(manifest.apiRoutes, manifest.middleware ? [manifest.middleware] : []);
   const { port, host } = resolveServerOptions(config, process.env);
 
   const server = createServer(async (request, response) => {

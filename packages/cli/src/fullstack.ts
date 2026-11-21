@@ -5,7 +5,7 @@ import { createElement, type ComponentType } from "react";
 import { renderToString } from "react-dom/server";
 import { createRouter, type JavafyLayoutProps, type JavafyPageProps } from "@javafy/router";
 import { matchRoute, type RouteDefinition } from "@javafy/core";
-import type { ApiRouteDefinition } from "@javafy/server";
+import type { ApiRouteDefinition, JavafyMiddleware } from "@javafy/server";
 import { build } from "esbuild";
 
 type DataContext = {
@@ -39,12 +39,14 @@ export interface FullstackManifest {
   pages: FullstackPage[];
   apiRoutes: ApiRouteDefinition[];
   notFound?: ComponentType<JavafyPageProps>;
+  middleware?: JavafyMiddleware;
 }
 
 export interface DiscoveredFiles {
   pages: Array<{ path: string; page: string; layouts: string[] }>;
   api: Array<{ path: string; file: string }>;
   notFound?: string;
+  middleware?: string;
   watchDirs: string[];
 }
 
@@ -103,8 +105,9 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
   }
 
   const notFound = ["not-found.tsx", "not-found.ts"].map((name) => resolve(appDir, name)).find(existsSync);
+  const middleware = findFile(appDir, ["middleware.ts"]);
   walk(appDir, []);
-  return { pages, api, ...(notFound ? { notFound } : {}), watchDirs };
+  return { pages, api, ...(notFound ? { notFound } : {}), ...(middleware ? { middleware } : {}), watchDirs };
 }
 
 
@@ -129,6 +132,7 @@ export async function buildFullstackManifest(
   }
   for (const route of discovered.api) importFor(route.file);
   if (discovered.notFound) importFor(discovered.notFound);
+  if (discovered.middleware) importFor(discovered.middleware);
 
   const source = [
     ...[...imports.entries()].map(([file, name]) => `import * as ${name} from ${JSON.stringify(file)};`),
@@ -145,7 +149,8 @@ export async function buildFullstackManifest(
       return `  { path: ${JSON.stringify(route.path)}, ${methods.map((method) => `${method}: ${mod}.${method}`).join(", ")} },`;
     }),
     "];",
-    `export const notFound = ${discovered.notFound ? importFor(discovered.notFound) + ".default" : "undefined"};`
+    `export const notFound = ${discovered.notFound ? importFor(discovered.notFound) + ".default" : "undefined"};`,
+    `export const middleware = ${discovered.middleware ? importFor(discovered.middleware) + ".default" : "undefined"};`
   ].join("\n");
 
   mkdirSync(dirname(outputFile), { recursive: true });
@@ -169,6 +174,7 @@ export async function loadFullstackManifest(file: string): Promise<FullstackMani
     pages: FullstackPage[];
     apiRoutes: ApiRouteDefinition[];
     notFound?: ComponentType<JavafyPageProps>;
+    middleware?: JavafyMiddleware;
   };
   return loaded;
 }

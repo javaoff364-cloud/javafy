@@ -1,6 +1,6 @@
 {
   "name": "@javafy/router",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "File-based React router for Javafy applications.",
   "license": "MIT",
   "type": "module",
@@ -16,7 +16,7 @@
     "dist"
   ],
   "dependencies": {
-    "@javafy/core": "0.7.0"
+    "@javafy/core": "0.8.0"
   },
   "peerDependencies": {
     "react": "^19.0.0"
