@@ -242,8 +242,19 @@ export async function renderFullstackPage(
   let props: Record<string, unknown> = {};
   const loader = options.static ? page.getStaticProps : page.getServerSideProps ?? page.getStaticProps;
   if (loader) {
-    const result = await loader(context);
-    if (result && typeof result === "object") props = result;
+    try {
+      const result = await loader(context);
+      if (result && typeof result === "object") props = result;
+    } catch (caught) {
+      const error = caught instanceof Error ? caught : new Error(String(caught));
+      const fallback = page.error
+        ? createElement(page.error, { error, reset: () => {}, params: matched.params, pathname: matched.pathname })
+        : createElement("main", { role: "alert" },
+            createElement("h1", null, "Something went wrong"),
+            createElement("p", null, "This page data could not be loaded.")
+          );
+      return { html: renderToString(fallback), props: {}, status: 500 };
+    }
   }
 
   const PageWithData: ComponentType<JavafyPageProps> = (pageProps) =>
