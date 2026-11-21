@@ -29,15 +29,34 @@ export interface JavafyRoute extends RouteDefinition {
 }
 
 export interface JavafyRouterValue extends JavafyPageProps {
+  /** Current URL query parameters. Updated on push, replace, and browser history navigation. */
+  searchParams: URLSearchParams;
+  /** Current URL hash, including the leading #, or an empty string. */
+  hash: string;
   navigate: (to: string, options?: { replace?: boolean }) => void;
   back: () => void;
   forward: () => void;
 }
 
+interface LocationSnapshot {
+  pathname: string;
+  search: string;
+  hash: string;
+}
+
 const RouterContext = createContext<JavafyRouterValue | null>(null);
 const NAVIGATION_EVENT = "javafy:navigate";
 
-/** Navigate without a full page reload. */
+function getLocationSnapshot(input: string): LocationSnapshot {
+  const url = new URL(input, "http://javafy.local");
+  return { pathname: url.pathname, search: url.search, hash: url.hash };
+}
+
+function readBrowserLocation(): LocationSnapshot {
+  return getLocationSnapshot(window.location.href);
+}
+
+/** Navigate without a full page reload when the application is running in SPA mode. */
 export function navigate(to: string, options: { replace?: boolean } = {}): void {
   if (typeof window === "undefined") return;
   const url = new URL(to, window.location.href);
@@ -54,7 +73,7 @@ export function navigate(to: string, options: { replace?: boolean } = {}): void 
   window.dispatchEvent(new Event(NAVIGATION_EVENT));
 }
 
-/** Access the current route and navigation methods inside a Javafy page or layout. */
+/** Access the current route, URL state, and navigation methods inside a Javafy page or layout. */
 export function useRouter(): JavafyRouterValue {
   const value = useContext(RouterContext);
   if (!value) throw new Error("useRouter must be used inside a Javafy router.");
@@ -98,12 +117,16 @@ export function createRouter(options: {
   initialPathname?: string;
 }): ComponentType {
   const Router = function JavafyRouter() {
-    const [pathname, setPathname] = useState(
-      options.initialPathname ?? (typeof window === "undefined" ? "/" : window.location.pathname)
+    const [location, setLocation] = useState<LocationSnapshot>(() =>
+      options.initialPathname
+        ? getLocationSnapshot(options.initialPathname)
+        : typeof window === "undefined"
+          ? getLocationSnapshot("/")
+          : readBrowserLocation()
     );
 
     useEffect(() => {
-      const update = () => setPathname(window.location.pathname);
+      const update = () => setLocation(readBrowserLocation());
       window.addEventListener("popstate", update);
       window.addEventListener(NAVIGATION_EVENT, update);
       return () => {
@@ -112,6 +135,7 @@ export function createRouter(options: {
       };
     }, []);
 
+    const { pathname } = location;
     const matched = useMemo(
       () => matchRoute(pathname, options.routes),
       [pathname]
@@ -137,10 +161,12 @@ export function createRouter(options: {
     const value = useMemo<JavafyRouterValue>(() => ({
       pathname,
       params,
+      searchParams: new URLSearchParams(location.search),
+      hash: location.hash,
       navigate,
       back: () => window.history.back(),
       forward: () => window.history.forward()
-    }), [pathname, params]);
+    }), [location, params]);
 
     return createElement(RouterContext.Provider, { value }, content);
   };
