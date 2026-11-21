@@ -12,7 +12,6 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 - React 19 application runtime.
 - File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), and nested layouts.
 - File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
-- File-based API middleware for API requests in development and production.
 - File-based API middleware with ordered execution, short-circuit responses, and request replacement.
 - Server-side rendering (SSR) for page requests.
 - Server-side data loaders with `getServerSideProps`.
