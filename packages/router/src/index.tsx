@@ -26,6 +26,7 @@ export interface JavafyLayoutProps extends JavafyPageProps {
 export interface JavafyRoute extends RouteDefinition {
   component: ComponentType<JavafyPageProps>;
   layouts?: ComponentType<JavafyLayoutProps>[];
+  loading?: ComponentType<JavafyPageProps>;
   props?: Record<string, unknown>;
 }
 
@@ -133,6 +134,7 @@ export function createRouter(options: {
           : readBrowserLocation()
     );
     const [navigationData, setNavigationData] = useState<JavafyNavigationData | null>(null);
+    const [isNavigating, setIsNavigating] = useState(false);
     const navigationId = useRef(0);
 
     useEffect(() => {
@@ -141,18 +143,26 @@ export function createRouter(options: {
         const nextLocation = readBrowserLocation();
         const currentId = ++navigationId.current;
         setLocation(nextLocation);
-        setNavigationData({ status: 200, props: {} });
-        if (!options.loadData) return;
+        if (!options.loadData) {
+          setNavigationData({ status: 200, props: {} });
+          setIsNavigating(false);
+          return;
+        }
+        setIsNavigating(true);
         try {
           const url = new URL(window.location.href);
           const result = await options.loadData(url);
-          if (active && navigationId.current === currentId) setNavigationData(result);
+          if (active && navigationId.current === currentId) {
+            setNavigationData(result);
+            setIsNavigating(false);
+          }
         } catch (error) {
           if (active && navigationId.current === currentId) {
             setNavigationData({
               status: 500,
               props: { __javafyNavigationError: error instanceof Error ? error.message : "Navigation failed" }
             });
+            setIsNavigating(false);
           }
         }
       };
@@ -180,8 +190,10 @@ export function createRouter(options: {
           createElement("h1", null, "Navigation failed"),
           createElement("p", null, "Javafy could not load this page. Please try again.")
         )
-      : route
-        ? createElement(route.component, { ...pageProps, params, pathname })
+      : isNavigating && route?.loading
+        ? createElement(route.loading, { params, pathname })
+        : route
+          ? createElement(route.component, { ...pageProps, params, pathname })
         : options.notFound
         ? createElement(options.notFound, { params, pathname })
         : createElement("main", null,

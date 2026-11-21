@@ -33,6 +33,7 @@ export interface FullstackPage extends RouteDefinition {
   getServerSideProps?: DataLoader;
   getStaticProps?: DataLoader;
   getStaticPaths?: PageModule["getStaticPaths"];
+  loading?: ComponentType<JavafyPageProps>;
 }
 
 export interface FullstackManifest {
@@ -43,7 +44,7 @@ export interface FullstackManifest {
 }
 
 export interface DiscoveredFiles {
-  pages: Array<{ path: string; page: string; layouts: string[] }>;
+  pages: Array<{ path: string; page: string; layouts: string[]; loading?: string }>;
   api: Array<{ path: string; file: string }>;
   notFound?: string;
   middleware?: string;
@@ -74,6 +75,13 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
     watchDirs.push(directory);
     const entries = readdirSync(directory, { withFileTypes: true });
     const pageFile = findFile(directory, ["page.tsx", "page.ts"]);
+    const loadingFile = findFile(directory, ["loading.tsx", "loading.ts"]);
+    let inheritedLoading = findFile(appDir, ["loading.tsx", "loading.ts"]);
+    let loadingParent = appDir;
+    for (const segment of segments) {
+      loadingParent = resolve(loadingParent, segment);
+      inheritedLoading = findFile(loadingParent, ["loading.tsx", "loading.ts"]) ?? inheritedLoading;
+    }
     const apiFile = findFile(directory, ["route.ts", "route.tsx"]);
     const rootLayout = findFile(appDir, ["layout.tsx", "layout.ts"]);
     if (pageFile) {
@@ -88,7 +96,8 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
       pages.push({
         path: segments.length ? "/" + segments.map(routeSegment).join("/") : "/",
         page: pageFile,
-        layouts
+        layouts,
+        ...((loadingFile ?? inheritedLoading) ? { loading: loadingFile ?? inheritedLoading } : {})
       });
     }
     if (apiFile && segments[0] === "api") {
@@ -129,6 +138,7 @@ export async function buildFullstackManifest(
   for (const page of discovered.pages) {
     importFor(page.page);
     page.layouts.forEach(importFor);
+    if (page.loading) importFor(page.loading);
   }
   for (const route of discovered.api) importFor(route.file);
   if (discovered.notFound) importFor(discovered.notFound);
@@ -140,7 +150,8 @@ export async function buildFullstackManifest(
     ...discovered.pages.map((page) => {
       const mod = importFor(page.page);
       const layouts = page.layouts.map((file) => `${importFor(file)}.default`);
-      return `  { path: ${JSON.stringify(page.path)}, component: ${mod}.default, layouts: [${layouts.join(", ")}], getServerSideProps: ${mod}.getServerSideProps, getStaticProps: ${mod}.getStaticProps, getStaticPaths: ${mod}.getStaticPaths },`;
+      const loading = page.loading ? `${importFor(page.loading)}.default` : "undefined";
+      return `  { path: ${JSON.stringify(page.path)}, component: ${mod}.default, layouts: [${layouts.join(", ")}], loading: ${loading}, getServerSideProps: ${mod}.getServerSideProps, getStaticProps: ${mod}.getStaticProps, getStaticPaths: ${mod}.getStaticPaths },`;
     }),
     "];",
     "export const apiRoutes = [",

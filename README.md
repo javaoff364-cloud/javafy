@@ -10,7 +10,7 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 
 - TypeScript and TSX compilation powered by esbuild.
 - React 19 application runtime.
-- File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), and nested layouts.
+- File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), nested layouts, and route-level loading UI.
 - File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
 - File-based API middleware with ordered execution, short-circuit responses, and request replacement.
 - Server-side rendering (SSR) for page requests.
@@ -98,6 +98,18 @@ export default function BlogPage({
 ### Layouts
 
 A `layout.tsx` wraps pages in its folder and descendants. The root `src/app/layout.tsx` wraps every page.
+
+### Route loading UI
+
+Add a `loading.tsx` file beside a page to show a fallback while that route's client-navigation data is loading. A root `src/app/loading.tsx` is inherited by routes that do not define their own loading UI. The nearest route-level loading file takes precedence.
+
+```tsx
+export default function Loading() {
+  return <p role="status">Loading page...</p>;
+}
+```
+
+The loading component is rendered inside the route's shared layouts and is only shown during client-side data transitions; initial SSR/SSG rendering remains unchanged.
 
 ```tsx
 import type { ReactNode } from "react";
@@ -260,9 +272,9 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 ## Current limitations
 
-- Fullstack client navigation currently uses a JSON data request per transition; streaming navigation, prefetching, cancellation UI, and route-level loading/error boundaries are not included.
+- Fullstack client navigation currently uses a JSON data request per transition; streaming navigation, prefetching, and cancellation UI are not included.
 - `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
-- Streaming SSR, route-level loading/error boundaries, and incremental regeneration are not included yet. React Fast Refresh is development-only.
+- Streaming SSR, route-level error boundaries, and incremental regeneration are not included yet. React Fast Refresh is development-only.
 - API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
 
 ## Roadmap
