@@ -164,6 +164,7 @@ export function createRouter(options: {
           prefetchedData.current.delete(key);
           throw error;
         });
+        void pending.catch(() => {});
         prefetchedData.current.set(key, pending);
       }
     };
