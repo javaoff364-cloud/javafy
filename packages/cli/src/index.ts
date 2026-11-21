@@ -6,7 +6,7 @@ import {
 } from "node:fs";
 import { dirname, extname, join, normalize, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { createApiRouter } from "@javafy/server";
+import { createApiRouter, createMiddlewareHandler } from "@javafy/server";
 import { buildFullstackManifest, discoverFullstackFiles, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "./fullstack.js";
 import {
   build as esbuild, context as createBuildContext,
@@ -224,33 +224,30 @@ async function sendWebResponse(response: Response, target: ServerResponse): Prom
 }
 
 async function sendNavigationData(
-  request: IncomingMessage,
-  manifest: Awaited<ReturnType<typeof loadFullstackManifest>>,
-  response: ServerResponse
-): Promise<void> {
+  incoming: Request,
+  manifest: Awaited<ReturnType<typeof loadFullstackManifest>>
+): Promise<Response> {
   try {
-    const incoming = await toWebRequest(request);
     const endpoint = new URL(incoming.url);
     const targetPath = endpoint.searchParams.get("url");
     if (!targetPath || !targetPath.startsWith("/") || targetPath.startsWith("//")) {
-      response.writeHead(400, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-      response.end(JSON.stringify({ error: "Invalid navigation URL." }));
-      return;
+      return Response.json({ error: "Invalid navigation URL." }, { status: 400, headers: { "cache-control": "no-store" } });
     }
     const target = new URL(targetPath, endpoint.origin);
     if (target.origin !== endpoint.origin || target.pathname.startsWith("/__javafy/")) {
-      response.writeHead(400, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-      response.end(JSON.stringify({ error: "Invalid navigation URL." }));
-      return;
+      return Response.json({ error: "Invalid navigation URL." }, { status: 400, headers: { "cache-control": "no-store" } });
     }
     const pageRequest = new Request(target.href, { headers: incoming.headers });
     const rendered = await renderFullstackPage(manifest, target.pathname, { request: pageRequest });
-    response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-    response.end(JSON.stringify({ props: rendered?.props ?? {}, status: rendered?.status ?? 404 }).replace(/</g, "\\u003c"));
+    return Response.json({ props: rendered?.props ?? {}, status: rendered?.status ?? 404 }, {
+      headers: { "cache-control": "no-store" }
+    });
   } catch (error) {
     console.error("Javafy: navigation data request failed", error);
-    response.writeHead(500, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
-    response.end(JSON.stringify({ error: "Navigation data could not be loaded." }));
+    return Response.json({ error: "Navigation data could not be loaded." }, {
+      status: 500,
+      headers: { "cache-control": "no-store" }
+    });
   }
 }
 
@@ -497,7 +494,14 @@ async function dev(): Promise<void> {
     }
 
     if (pathname === "/__javafy/data") {
-      await sendNavigationData(request, manifest, response);
+      try {
+        const webRequest = await toWebRequest(request);
+        const handler = createMiddlewareHandler(manifest.middleware ? [manifest.middleware] : [], (current) => sendNavigationData(current, manifest));
+        await sendWebResponse(await handler(webRequest), response);
+      } catch (error) {
+        console.error("Javafy: navigation middleware failed", error);
+        sendText(response, 500, "Navigation data could not be loaded.");
+      }
       return;
     }
 
@@ -550,10 +554,15 @@ async function dev(): Promise<void> {
       if (html) {
         try {
           const webRequest = await toWebRequest(request);
-          const rendered = await renderFullstackPage(manifest, pathname, { request: webRequest });
-          const document = renderHtmlDocument(html, rendered?.html ?? "", pathname, rendered?.props ?? {}, "/@javafy/app.js", true);
-          response.writeHead(rendered ? rendered.status : 404, { "content-type": "text/html; charset=utf-8" });
-          response.end(request.method === "HEAD" ? undefined : document);
+          const pageHandler = createMiddlewareHandler(manifest.middleware ? [manifest.middleware] : [], async (current) => {
+            const rendered = await renderFullstackPage(manifest, pathname, { request: current });
+            const document = renderHtmlDocument(html, rendered?.html ?? "", pathname, rendered?.props ?? {}, "/@javafy/app.js", true);
+            return new Response(request.method === "HEAD" ? null : document, {
+              status: rendered ? rendered.status : 404,
+              headers: { "content-type": "text/html; charset=utf-8" }
+            });
+          });
+          await sendWebResponse(await pageHandler(webRequest), response);
           return;
         } catch (error) {
           sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");
@@ -675,7 +684,14 @@ async function start(): Promise<void> {
     }
 
     if (pathname === "/__javafy/data") {
-      await sendNavigationData(request, manifest, response);
+      try {
+        const webRequest = await toWebRequest(request);
+        const handler = createMiddlewareHandler(manifest.middleware ? [manifest.middleware] : [], (current) => sendNavigationData(current, manifest));
+        await sendWebResponse(await handler(webRequest), response);
+      } catch (error) {
+        console.error("Javafy: navigation middleware failed", error);
+        sendText(response, 500, "Navigation data could not be loaded.");
+      }
       return;
     }
 
@@ -709,16 +725,18 @@ async function start(): Promise<void> {
     if (!extname(pathname)) {
       try {
         const webRequest = await toWebRequest(request);
-        const rendered = await renderFullstackPage(manifest, pathname, { request: webRequest });
-        if (!rendered) {
-          sendText(response, 404, "Javafy: page not found.");
-          return;
-        }
         const shellFile = join(output, "server", "shell.html");
         const shell = existsSync(shellFile) ? readFileSync(shellFile, "utf8") : getHtml(root) ?? '<!doctype html><html><head><meta charset="utf-8"></head><body><div id="root"></div></body></html>';
-        const document = renderHtmlDocument(shell, rendered.html, pathname, rendered.props, "/assets/app.js");
-        response.writeHead(rendered.status, { "content-type": "text/html; charset=utf-8" });
-        response.end(request.method === "HEAD" ? undefined : document);
+        const pageHandler = createMiddlewareHandler(manifest.middleware ? [manifest.middleware] : [], async (current) => {
+          const rendered = await renderFullstackPage(manifest, pathname, { request: current });
+          if (!rendered) return new Response("Javafy: page not found.", { status: 404 });
+          const document = renderHtmlDocument(shell, rendered.html, pathname, rendered.props, "/assets/app.js");
+          return new Response(request.method === "HEAD" ? null : document, {
+            status: rendered.status,
+            headers: { "content-type": "text/html; charset=utf-8" }
+          });
+        });
+        await sendWebResponse(await pageHandler(webRequest), response);
         return;
       } catch (error) {
         sendText(response, 500, error instanceof Error ? error.message : "Server rendering failed");
