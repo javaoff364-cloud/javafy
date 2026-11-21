@@ -27,8 +27,11 @@ function allowedMethods(route: ApiRouteDefinition): ApiMethod[] {
 }
 
 /** Creates a Web Request/Response API dispatcher for static and dynamic route patterns. */
-export function createApiRouter(routes: readonly ApiRouteDefinition[]) {
-  return async function handleApiRequest(request: Request): Promise<Response> {
+export function createApiRouter(
+  routes: readonly ApiRouteDefinition[],
+  middleware: readonly JavafyMiddleware[] = []
+) {
+  const handleApiRequest = async function handleApiRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const match = matchRoute(url.pathname, routes);
     if (!match) {
@@ -76,6 +79,8 @@ export function createApiRouter(routes: readonly ApiRouteDefinition[]) {
       );
     }
   };
+
+  return createMiddlewareHandler(middleware, handleApiRequest);
 }
 
 
