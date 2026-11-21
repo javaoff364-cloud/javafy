@@ -255,7 +255,7 @@ export async function renderFullstackPage(
   const loader = options.static ? page.getStaticProps : page.getServerSideProps ?? page.getStaticProps;
   let cacheKey: string | undefined;
   const cacheSeconds = !options.static && page.getServerSideProps &&
-    Number.isFinite(page.revalidate) && (page.revalidate ?? 0) > 0 && page.getCacheKey
+    Number.isInteger(page.revalidate) && (page.revalidate ?? 0) > 0 && page.getCacheKey
     ? Math.floor(page.revalidate as number)
     : 0;
   if (cacheSeconds > 0 && page.getCacheKey) {
@@ -312,6 +312,7 @@ export async function renderFullstackPage(
     return { html: renderToString(createElement(Router)), props, status: 200 };
   } catch (caught) {
     const error = caught instanceof Error ? caught : new Error(String(caught));
+    console.error("[Javafy diagnostics] Server render failed for " + page.path, error);
     const fallback = page.error
       ? createElement(page.error, { error, reset: () => {}, params: matched.params, pathname: matched.pathname })
       : createElement("main", { role: "alert" },
