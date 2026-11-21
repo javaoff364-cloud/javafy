@@ -68,6 +68,7 @@ interface DiscoveredRoute {
   path: string;
   page: string;
   layouts: string[];
+  loading?: string;
 }
 
 function discoverRoutes(appDir: string): {
@@ -88,6 +89,10 @@ function discoverRoutes(appDir: string): {
     const page = entries
       .filter((entry) => entry.isFile() && (entry.name === "page.tsx" || entry.name === "page.ts"))
       .map((entry) => join(directory, entry.name))[0];
+    const localLoading = [join(directory, "loading.tsx"), join(directory, "loading.ts")].find(existsSync);
+    const rootLoading = segments.length
+      ? [join(appDir, "loading.tsx"), join(appDir, "loading.ts")].find(existsSync)
+      : undefined;
 
     if (page) {
       const routeSegments = segments.map((segment) => {
@@ -107,7 +112,8 @@ function discoverRoutes(appDir: string): {
       routes.push({
         path: routeSegments.length ? `/${routeSegments.join("/")}` : "/",
         page,
-        layouts
+        layouts,
+        ...((localLoading ?? rootLoading) ? { loading: localLoading ?? rootLoading } : {})
       });
     }
 
@@ -152,6 +158,7 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
         for (const route of discovered.routes) {
           importFor(route.page);
           route.layouts.forEach(importFor);
+          if (route.loading) importFor(route.loading);
         }
         if (discovered.notFound) importFor(discovered.notFound);
 
@@ -167,7 +174,8 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
           ...discovered.routes.map((route) => {
             const page = importFor(route.page);
             const layouts = route.layouts.map(importFor);
-            return `    { path: ${JSON.stringify(route.path)}, component: ${page}, layouts: [${layouts.join(", ")}], props: window.__JAVAFY_DATA__?.[window.location.pathname] ?? {} },`;
+            const loading = route.loading ? importFor(route.loading) : "undefined";
+            return `    { path: ${JSON.stringify(route.path)}, component: ${page}, layouts: [${layouts.join(", ")}], loading: ${loading}, props: window.__JAVAFY_DATA__?.[window.location.pathname] ?? {} },`;
           }),
           "  ],",
           ...(discovered.notFound ? [`  notFound: ${importFor(discovered.notFound)},`] : []),
