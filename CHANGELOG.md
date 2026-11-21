@@ -4,11 +4,11 @@
 
 - Added a composable request middleware pipeline to the server package.
 - Added file-based middleware discovery through `src/app/middleware.ts`.
-- Applied middleware to API routes in development and production servers.
+- Applied middleware to API routes, SSR page requests, and client-navigation data requests in development and production servers.
 - Added ordered execution, response short-circuiting, downstream request replacement, and duplicate-`next()` protection.
 - Added server and CLI regression tests for middleware composition and manifest loading.
 
-Current scope: middleware wraps file-based API requests. Page rendering, navigation-data requests, and static assets are not yet included.
+Current scope: middleware wraps API, SSR page, and navigation-data requests. Static assets and build-time SSG rendering are not wrapped.
 
 ## 0.7.0 — Client Navigation
 
