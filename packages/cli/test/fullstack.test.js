@@ -171,3 +171,39 @@ test("optional catch-all SSG paths do not match paths that were not generated", 
   const missing = await renderFullstackPage(manifest, "/optional/not-generated");
   assert.equal(missing.status, 404);
 });
+
+
+test("discovers and loads app middleware for API requests", async () => {
+  const root = mkdtempSync(join(process.cwd(), ".javafy-middleware-integration-"));
+  const app = join(root, "src", "app");
+  mkdirSync(join(app, "api", "private"), { recursive: true });
+  writeFileSync(join(app, "middleware.ts"), `
+    export default async function middleware(request, next) {
+      const headers = new Headers(request.headers);
+      headers.set("x-javafy-auth", "checked");
+      return next(new Request(request, { headers }));
+    }
+  `);
+  writeFileSync(join(app, "api", "private", "route.ts"), `
+    export function GET(request) {
+      return Response.json({ auth: request.headers.get("x-javafy-auth") });
+    }
+  `);
+
+  try {
+    const discovered = discoverFullstackFiles(app);
+    assert.ok(discovered.middleware);
+    const manifestFile = join(root, "server-manifest.mjs");
+    await buildFullstackManifest(root, app, manifestFile);
+    const manifest = await loadFullstackManifest(manifestFile);
+    assert.equal(typeof manifest.middleware, "function");
+
+    const { createApiRouter } = await import("@javafy/server");
+    const api = createApiRouter(manifest.apiRoutes, [manifest.middleware]);
+    const response = await api(new Request("http://localhost/api/private"));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { auth: "checked" });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
