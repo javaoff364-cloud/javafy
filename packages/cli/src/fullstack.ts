@@ -76,7 +76,12 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
     const entries = readdirSync(directory, { withFileTypes: true });
     const pageFile = findFile(directory, ["page.tsx", "page.ts"]);
     const loadingFile = findFile(directory, ["loading.tsx", "loading.ts"]);
-    const inheritedLoading = segments.length ? findFile(appDir, ["loading.tsx", "loading.ts"]) : undefined;
+    let inheritedLoading = findFile(appDir, ["loading.tsx", "loading.ts"]);
+    let loadingParent = appDir;
+    for (const segment of segments) {
+      loadingParent = resolve(loadingParent, segment);
+      inheritedLoading = findFile(loadingParent, ["loading.tsx", "loading.ts"]) ?? inheritedLoading;
+    }
     const apiFile = findFile(directory, ["route.ts", "route.tsx"]);
     const rootLayout = findFile(appDir, ["layout.tsx", "layout.ts"]);
     if (pageFile) {
