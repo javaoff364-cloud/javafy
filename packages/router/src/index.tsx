@@ -171,12 +171,18 @@ export function createRouter(options: {
       [pathname]
     );
     const notFound = navigationData?.status === 404;
-    const route = notFound ? undefined : matched?.route;
+    const navigationFailed = (navigationData?.status ?? 0) >= 500;
+    const route = notFound || navigationFailed ? undefined : matched?.route;
     const params = matched?.params ?? {};
     const pageProps = navigationData?.props ?? route?.props ?? {};
-    const page = route
-      ? createElement(route.component, { ...pageProps, params, pathname })
-      : options.notFound
+    const page = navigationFailed
+      ? createElement("main", { role: "alert" },
+          createElement("h1", null, "Navigation failed"),
+          createElement("p", null, "Javafy could not load this page. Please try again.")
+        )
+      : route
+        ? createElement(route.component, { ...pageProps, params, pathname })
+        : options.notFound
         ? createElement(options.notFound, { params, pathname })
         : createElement("main", null,
             createElement("h1", null, "404 — Page not found"),
