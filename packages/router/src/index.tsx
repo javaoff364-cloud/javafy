@@ -271,21 +271,28 @@ export function createRouter(options: {
     const route = notFound || navigationFailed ? undefined : matched?.route;
     const params = matched?.params ?? {};
     const pageProps = navigationData?.props ?? route?.props ?? {};
-    const page = navigationFailed
-      ? createElement("main", { role: "alert" },
-          createElement("h1", null, "Navigation failed"),
-          createElement("p", null, "Javafy could not load this page. Please try again.")
-        )
-      : isNavigating && route?.loading
-        ? createElement(route.loading, { params, pathname })
-        : route
-          ? createElement(route.component, { ...pageProps, params, pathname })
-        : options.notFound
-        ? createElement(options.notFound, { params, pathname })
-        : createElement("main", null,
-            createElement("h1", null, "404 — Page not found"),
-            createElement("p", null, `No Javafy route matches ${pathname}`)
-          );
+    const page = navigationFailed && route?.error
+      ? createElement(route.error, {
+          error: new Error(String(pageProps.__javafyNavigationError ?? "Navigation failed")),
+          reset: () => navigate(pathname + location.search + location.hash),
+          params,
+          pathname
+        })
+      : navigationFailed
+        ? createElement("main", { role: "alert" },
+            createElement("h1", null, "Navigation failed"),
+            createElement("p", null, "Javafy could not load this page. Please try again.")
+          )
+        : isNavigating && route?.loading
+          ? createElement(route.loading, { params, pathname })
+          : route
+            ? createElement(route.component, { ...pageProps, params, pathname })
+          : options.notFound
+          ? createElement(options.notFound, { params, pathname })
+          : createElement("main", null,
+              createElement("h1", null, "404 — Page not found"),
+              createElement("p", null, `No Javafy route matches ${pathname}`)
+            );
 
     const routedContent = route
       ? (route.layouts ?? []).reduceRight<ReactNode>(
