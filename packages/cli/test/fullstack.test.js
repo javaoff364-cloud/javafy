@@ -22,7 +22,7 @@ test("discovers page, nested layout, and API route files", () => {
 
   try {
     const found = discoverFullstackFiles(app);
-    assert.equal(found.pages.length, 1);
+    assert.equal(found.pages.length, 3);
     assert.equal(found.pages[0].path, "/dashboard");
     assert.equal(found.pages[0].layouts.length, 2);
     assert.equal(found.pages.find((page) => page.path === "/dashboard").loading, join(app, "dashboard", "loading.tsx"));
