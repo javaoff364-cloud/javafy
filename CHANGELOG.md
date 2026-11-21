@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.0 — Stability and Production Hardening
+
+- Added validation for route patterns, including invalid parameters, duplicate parameter names, and catch-all placement.
+- Added configuration validation for application name, host, port, and directory settings.
+- Hardened API `OPTIONS` responses with an automatically computed `Allow` header unless the handler explicitly provides one.
+- Sanitized API 500 responses so internal exception details are logged on the server and not exposed to clients.
+- Validated production `HOST` and `PORT` environment overrides, including port range and hostname checks.
+- Added clear startup diagnostics for ports already in use, permission errors, and other server bind failures.
+- Added regression coverage for encoded paths, malformed catch-all encodings, static-route precedence, extra path segments, and server port binding.
+- Aligned the root workspace and all Javafy packages to version 0.6.0.
+
+Known limitations: Fast Refresh is development-only; incompatible component signatures, global side effects, HTML shell changes, and server-only route changes may require a full refresh or restart. Browser-level state-preservation behavior should be verified in a real application before treating it as fully supported.
+
+
 ## 0.5.0 — Runtime Engine
 
 - Added React Refresh transforms for application TS/TSX modules.
