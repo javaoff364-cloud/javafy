@@ -9,6 +9,7 @@ import {
   useState,
   type AnchorHTMLAttributes,
   type ComponentType,
+  type ErrorInfo,
   type FocusEvent,
   type MouseEvent,
   type ReactNode
@@ -73,6 +74,10 @@ class RouteErrorBoundary extends Component<{
   reset = (): void => {
     this.setState({ error: null });
   };
+
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    console.error("[Javafy diagnostics] Route render failed for " + this.props.pathname, error, info.componentStack);
+  }
 
   render(): ReactNode {
     if (this.state.error) {
