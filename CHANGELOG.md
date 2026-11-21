@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — 0.7.0 development
+## 0.7.0 — Client Navigation
 
 - Extended the router context with `searchParams` and `hash`, so query-string and fragment changes are represented in router state.
 - Added fullstack client transitions for same-origin links and `navigate()`, without reloading the document.
@@ -9,6 +9,9 @@
 - Kept shared layouts mounted across route changes where their component identity is unchanged.
 - Preserved ordinary browser behavior for external links, modified clicks, and download links.
 - Added regression coverage for request-specific loader props and query-string data.
+- Preserved query-string state during SSR hydration.
+
+This release uses JSON navigation-data requests for fullstack transitions. Streaming SSR, prefetching, cancellation UI, and route-level loading/error boundaries remain future work.
 
 ## 0.6.0 — Stability and Production Hardening
 
