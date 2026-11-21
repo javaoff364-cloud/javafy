@@ -73,3 +73,29 @@ test("explicit OPTIONS handlers include Allow header", async () => {
   assert.match(response.headers.get("allow"), /GET/);
   assert.match(response.headers.get("allow"), /OPTIONS/);
 });
+
+
+test("runs middleware before API route handlers", async () => {
+  const middleware = async (request, next) => {
+    const response = await next(new Request(request, {
+      headers: { "x-javafy-middleware": "active" }
+    }));
+    const headers = new Headers(response.headers);
+    headers.set("x-middleware-ran", "true");
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers
+    });
+  };
+  const middlewareRouter = createApiRouter([{
+    path: "/api/private",
+    GET: (request) => Response.json({
+      middleware: request.headers.get("x-javafy-middleware")
+    })
+  }], [middleware]);
+
+  const response = await middlewareRouter(new Request("http://localhost/api/private"));
+  assert.equal(response.headers.get("x-middleware-ran"), "true");
+  assert.deepEqual(await response.json(), { middleware: "active" });
+});
