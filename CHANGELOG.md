@@ -9,6 +9,8 @@
 - Applied middleware to API routes, SSR page requests, and client-navigation data requests in development and production servers.
 - Added ordered execution, response short-circuiting, downstream request replacement, and duplicate-`next()` protection.
 - Added server and CLI regression tests for middleware composition and manifest loading.
+- Added automatic same-origin route-data prefetching for Javafy links on pointer hover and keyboard focus.
+- Reused pending prefetched requests during navigation; failed prefetches are discarded so navigation can retry.
 
 Current scope: middleware wraps API, SSR page, and navigation-data requests. Static assets and build-time SSG rendering are not wrapped.
 
