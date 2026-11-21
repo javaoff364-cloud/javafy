@@ -13,7 +13,7 @@ import {
   type BuildResult, type Plugin
 } from "esbuild";
 import { resolveConfig, JAVAFY_VERSION, type JavafyConfig } from "@javafy/core";
-import { createDevClientScript, createModuleGraph, serializeBuildErrors, createFastRefreshPlugin, createReactDomClientPlugin, resolveServerOptions, FAST_REFRESH_PREAMBLE, FAST_REFRESH_FOOTER } from "./runtime.js";
+import { createDevClientScript, createModuleGraph, serializeBuildErrors, createFastRefreshPlugin, createReactDomClientPlugin, resolveServerOptions, listenServer, FAST_REFRESH_PREAMBLE, FAST_REFRESH_FOOTER } from "./runtime.js";
 
 const command = process.argv[2] ?? "dev";
 
@@ -526,12 +526,18 @@ async function dev(): Promise<void> {
     response.end("Javafy: file not found.");
   });
 
-  server.listen(config.dev.port, config.dev.host, () => {
-    console.log(`\n  Javafy ${JAVAFY_VERSION} dev server: http://${config.dev.host}:${config.dev.port}\n`);
-    console.log(`  File-based routing: ${entryConfig.usesRouter ? "enabled" : "not detected"}`);
-    console.log("  TypeScript/TSX compiler: enabled");
-    console.log("  Live reload: enabled\n");
-  });
+  try {
+    await listenServer(server, config.dev.port, config.dev.host);
+  } catch (error) {
+    for (const watcher of manifestWatchers.values()) watcher.close();
+    if (manifestReloadTimer) clearTimeout(manifestReloadTimer);
+    await context.dispose();
+    throw error;
+  }
+  console.log(`\n  Javafy ${JAVAFY_VERSION} dev server: http://${config.dev.host}:${config.dev.port}\n`);
+  console.log(`  File-based routing: ${entryConfig.usesRouter ? "enabled" : "not detected"}`);
+  console.log("  TypeScript/TSX compiler: enabled");
+  console.log("  Live reload: enabled\n");
 
   const shutdown = async () => {
     server.close();
@@ -679,11 +685,10 @@ async function start(): Promise<void> {
     sendText(response, 404, "Javafy: file not found.");
   });
 
-  server.listen(port, host, () => {
-    console.log("\n  Javafy production server: http://" + host + ":" + port + "\n");
-    console.log("  API routes: enabled");
-    console.log("  Server-side rendering: enabled");
-  });
+  await listenServer(server, port, host);
+  console.log("\n  Javafy production server: http://" + host + ":" + port + "\n");
+  console.log("  API routes: enabled");
+  console.log("  Server-side rendering: enabled");
 }
 
 async function main(): Promise<void> {
