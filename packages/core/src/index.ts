@@ -52,4 +52,4 @@ export function resolveConfig(config: JavafyConfig = {}): Required<JavafyConfig>
 
 export { matchRoute, type RouteDefinition, type RouteMatch } from "./router.js";
 
-export const JAVAFY_VERSION = "0.8.0";
+export const JAVAFY_VERSION = "0.9.0";
