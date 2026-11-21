@@ -242,7 +242,8 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.2.0 | Development Engine | TypeScript/TSX compiler, rebuild, live reload |
 | 0.3.0 | Routing | File-based routes, layouts, dynamic routes |
 | 0.4.0 | Fullstack Engine | API routes, SSR, SSG, server data loaders |
-| 0.6.0 | Runtime | React Fast Refresh, state-preserving HMR, error overlay, module graph |
+| 0.5.0 | Runtime | React Fast Refresh, HMR, error overlay, module graph |
+| 0.6.0 | Stability | Router/config validation, API hardening, production server validation, startup diagnostics and regression tests |
 | 1.0.0 | Production | Optimizer, caching, security, benchmarks |
 
 ## Performance
