@@ -73,5 +73,5 @@ test("rejects invalid route patterns and duplicate parameter names", async () =>
 test("skips invalid route patterns instead of matching them", async () => {
   const { isValidRoutePattern } = await import("../dist/router.js");
   assert.equal(isValidRoutePattern("/users/:id/:id"), false);
-  assert.equal(matchRoute("/users/a/a", [{ path: "/users/:id/:id" }, { path: "/users/:id" }])?.route.path, "/users/:id");
+  assert.equal(matchRoute("/users/a/b", [{ path: "/users/:id/:id" }, { path: "/users/:first/:second" }])?.route.path, "/users/:first/:second");
 });
