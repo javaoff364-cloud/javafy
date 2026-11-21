@@ -266,9 +266,10 @@ export async function renderFullstackPage(
       console.error("[Javafy diagnostics] getCacheKey failed for " + page.path, error);
     }
   }
-  const cached = cacheKey ? loaderCache.get(cacheKey) : undefined;
-  if (cached && cached.expiresAt > Date.now()) props = cached.props;
-  else if (cached && cacheKey) loaderCache.delete(cacheKey);
+  const cacheEntry = cacheKey ? loaderCache.get(cacheKey) : undefined;
+  const cached = cacheEntry && cacheEntry.expiresAt > Date.now() ? cacheEntry : undefined;
+  if (cached) props = cached.props;
+  else if (cacheEntry && cacheKey) loaderCache.delete(cacheKey);
   if (loader && !cached) {
     try {
       const result = await loader(context);
