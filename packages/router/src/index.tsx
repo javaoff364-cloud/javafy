@@ -8,6 +8,7 @@ import {
   useState,
   type AnchorHTMLAttributes,
   type ComponentType,
+  type FocusEvent,
   type MouseEvent,
   type ReactNode
 } from "react";
@@ -110,7 +111,7 @@ export function Link({
       onMouseEnter?.(event);
       if (!event.defaultPrevented) prefetch();
     },
-    onFocus: (event: React.FocusEvent<HTMLAnchorElement>) => {
+    onFocus: (event: FocusEvent<HTMLAnchorElement>) => {
       onFocus?.(event);
       if (!event.defaultPrevented) prefetch();
     },
