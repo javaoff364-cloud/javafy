@@ -12,6 +12,7 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 - React 19 application runtime.
 - File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), and nested layouts.
 - File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
+- File-based API middleware with ordered execution, short-circuit responses, and request replacement.
 - Server-side rendering (SSR) for page requests.
 - Server-side data loaders with `getServerSideProps`.
 - Static site generation (SSG) with `getStaticProps` and `getStaticPaths`.
@@ -124,6 +125,33 @@ export async function PUT(request: Request, { params }: Context) {
 ```
 
 Javafy automatically matches dynamic API parameters, returns 404 for unknown endpoints, 405 with an `Allow` header for unsupported methods, supports `HEAD` via `GET` fallback, and responds to `OPTIONS`. Unhandled handler errors become JSON 500 responses.
+
+## API middleware
+
+Create `src/app/middleware.ts` to run middleware before every file-based API route. Export one default middleware function:
+
+```ts
+export default async function middleware(
+  request: Request,
+  next: (request?: Request) => Promise<Response>
+) {
+  const token = request.headers.get("authorization");
+  if (!token) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const response = await next();
+  const headers = new Headers(response.headers);
+  headers.set("x-powered-by", "Javafy");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+```
+
+Middleware runs in registration order before the API handler and unwinds in reverse order after it. Return a response without calling `next()` to stop the request. Call `next()` at most once; it may receive a replacement `Request` for downstream handlers. The initial middleware release applies to API routes in both development and production servers; page rendering and static asset requests do not pass through this pipeline.
 
 ## Server-side rendering and data
 
