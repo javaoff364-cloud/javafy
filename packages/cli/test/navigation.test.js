@@ -1,12 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildFullstackManifest, loadFullstackManifest, renderFullstackPage } from "../dist/fullstack.js";
 
 test("navigation data loads request-specific page props and query parameters", async () => {
-  const root = mkdtempSync(join(tmpdir(), "javafy-navigation-"));
+  const root = mkdtempSync(join(process.cwd(), ".javafy-navigation-"));
   const app = join(root, "src", "app");
   mkdirSync(join(app, "search"), { recursive: true });
   writeFileSync(join(app, "search", "page.tsx"), `
