@@ -38,7 +38,8 @@ export function resolveConfig(config: JavafyConfig = {}): Required<JavafyConfig>
   if (typeof resolved.dev.host !== "string" || resolved.dev.host.trim() === "") {
     throw new Error("Javafy config: dev.host must be a non-empty string.");
   }
-  if (!Number.isInteger(resolved.dev.port) || resolved.dev.port < 1 || resolved.dev.port > 65535) {
+  const port = resolved.dev.port;
+  if (typeof port !== "number" || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error("Javafy config: dev.port must be an integer between 1 and 65535.");
   }
   for (const [key, value] of [["publicDir", resolved.publicDir], ["appDir", resolved.appDir]] as const) {
