@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — 0.7.0 development
+
+- Extended the router context with `searchParams` and `hash`, so query-string and fragment changes are represented in router state.
+- Updated the router location snapshot on client navigation and browser back/forward events.
+- Added router tests for initial query-string and hash state.
+
+This is an in-progress development entry, not a published release. Fullstack navigation still uses document requests while the state-preserving client transition work is being developed.
+
 ## 0.6.0 — Stability and Production Hardening
 
 - Added validation for route patterns, including invalid parameters, duplicate parameter names, and catch-all placement.
