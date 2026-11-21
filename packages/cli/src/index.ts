@@ -257,8 +257,7 @@ async function sendNavigationData(
 function renderHtmlDocument(
   shell: string,
   body: string,
-  pathname: string,
-  props: Record<string, unknown>,
+  pathname: string,  props: Record<string, unknown>,
   scriptPath: string,
   liveReload = false
 ): string {
@@ -518,7 +517,6 @@ async function dev(): Promise<void> {
       response.writeHead(403).end("Forbidden");
       return;
     }
-
     if (existsSync(target) && statSync(target).isDirectory()) target = join(target, "index.html");
     const isRouterShell = entryConfig.usesRouter && pathname === "/" && relative === "index.html";
     if (!isRouterShell && existsSync(target) && statSync(target).isFile()) {
@@ -668,6 +666,11 @@ async function start(): Promise<void> {
       pathname = new URL(request.url ?? "/", "http://localhost").pathname;
     } catch {
       sendText(response, 400, "Bad request");
+      return;
+    }
+
+    if (pathname === "/__javafy/data") {
+      await sendNavigationData(request, manifest, response);
       return;
     }
 
