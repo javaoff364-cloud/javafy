@@ -288,8 +288,20 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.5.0 | Runtime | React Fast Refresh, HMR, error overlay, module graph |
 | 0.6.0 | Stability | Router/config validation, API hardening, production server validation, startup diagnostics and regression tests |
 | 0.7.0 | Client Navigation | SPA/fullstack client transitions, server-loader refresh, router URL state, browser history integration and navigation regression coverage |
-| 0.8.0 | Request Middleware & Navigation UX | Composable middleware across API/SSR/navigation requests, route-level loading UI, and regression coverage |
-| 1.0.0 | Production | Optimizer, caching, security, benchmarks |
+| 0.8.0 | Request Middleware & Navigation UX | Composable middleware across API/SSR/navigation requests, inherited route-level loading UI, same-origin link prefetching, and regression coverage |
+| 0.9.0 | Reliability & Data UX | Route error boundaries, navigation cancellation, cache/revalidation primitives, and stronger runtime diagnostics |
+| 1.0.0 | Production | Bundle optimization, production security hardening, reproducible benchmarks, and deployment guidance |
+
+### 0.9.0 planned scope
+
+Javafy 0.9.0 is planned as a reliability-focused release. These items are goals, not features available in 0.8.0:
+
+- **Route error boundaries:** file-based error UI with predictable nearest-route fallback behavior.
+- **Navigation cancellation:** prevent stale route-data requests from replacing newer navigation results, and expose a clear pending/cancelled state.
+- **Cache and revalidation primitives:** explicit, documented controls for server-loader caching and freshness rather than implicit caching.
+- **Runtime diagnostics:** clearer route, loader, and middleware errors with regression tests covering development and production behavior.
+
+The exact scope may be adjusted based on issues and compatibility testing. Streaming SSR and `getStaticPaths` fallback modes remain separate design decisions and are not promised for 0.9.0.
 
 ## Performance
 
