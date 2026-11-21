@@ -62,6 +62,11 @@ export function createApiRouter(routes: readonly ApiRouteDefinition[]) {
       if (method === "HEAD") {
         return new Response(null, { status: response.status, statusText: response.statusText, headers: response.headers });
       }
+      if (method === "OPTIONS") {
+        const headers = new Headers(response.headers);
+        if (!headers.has("Allow")) headers.set("Allow", allowed.join(", "));
+        return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+      }
       return response;
     } catch (error) {
       // Never expose exception messages or stack details to API clients.
