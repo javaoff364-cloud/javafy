@@ -13,7 +13,7 @@ import {
   type BuildResult, type Plugin
 } from "esbuild";
 import { resolveConfig, JAVAFY_VERSION, type JavafyConfig } from "@javafy/core";
-import { createDevClientScript, createModuleGraph, serializeBuildErrors, createFastRefreshPlugin, createReactDomClientPlugin, FAST_REFRESH_PREAMBLE, FAST_REFRESH_FOOTER } from "./runtime.js";
+import { createDevClientScript, createModuleGraph, serializeBuildErrors, createFastRefreshPlugin, createReactDomClientPlugin, resolveServerOptions, FAST_REFRESH_PREAMBLE, FAST_REFRESH_FOOTER } from "./runtime.js";
 
 const command = process.argv[2] ?? "dev";
 
@@ -617,8 +617,7 @@ async function start(): Promise<void> {
   }
   const manifest = await loadFullstackManifest(manifestFile);
   const apiHandler = createApiRouter(manifest.apiRoutes);
-  const port = Number(process.env.PORT ?? config.dev.port);
-  const host = process.env.HOST ?? config.dev.host;
+  const { port, host } = resolveServerOptions(config, process.env);
 
   const server = createServer(async (request, response) => {
     let pathname: string;
