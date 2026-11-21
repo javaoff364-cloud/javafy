@@ -8,20 +8,26 @@ import { buildFullstackManifest, discoverFullstackFiles, getStaticRoutePaths, lo
 test("discovers page, nested layout, and API route files", () => {
   const root = mkdtempSync(join(tmpdir(), "javafy-fullstack-"));
   const app = join(root, "src", "app");
-  mkdirSync(join(app, "dashboard"), { recursive: true });
+  mkdirSync(join(app, "dashboard", "settings"), { recursive: true });
+  mkdirSync(join(app, "reports"), { recursive: true });
   mkdirSync(join(app, "api", "users", "[id]"), { recursive: true });
+  writeFileSync(join(app, "loading.tsx"), "export default function RootLoading() { return null }");
+  writeFileSync(join(app, "dashboard", "loading.tsx"), "export default function DashboardLoading() { return null }");
   writeFileSync(join(app, "layout.tsx"), "export default function Layout({children}) { return children }");
   writeFileSync(join(app, "dashboard", "layout.tsx"), "export default function DashboardLayout({children}) { return children }");
   writeFileSync(join(app, "dashboard", "page.tsx"), "export default function Dashboard() { return null }");
-  writeFileSync(join(app, "dashboard", "loading.tsx"), "export default function Loading() { return <p>Loading dashboard</p> }");
+  writeFileSync(join(app, "dashboard", "settings", "page.tsx"), "export default function Settings() { return null }");
+  writeFileSync(join(app, "reports", "page.tsx"), "export default function Reports() { return null }");
   writeFileSync(join(app, "api", "users", "[id]", "route.ts"), "export function GET() { return Response.json({ ok: true }) }");
 
   try {
     const found = discoverFullstackFiles(app);
-    assert.equal(found.pages.length, 1);
+    assert.equal(found.pages.length, 3);
     assert.equal(found.pages[0].path, "/dashboard");
     assert.equal(found.pages[0].layouts.length, 2);
-    assert.equal(found.pages[0].loading, join(app, "dashboard", "loading.tsx"));
+    assert.equal(found.pages.find((page) => page.path === "/dashboard").loading, join(app, "dashboard", "loading.tsx"));
+    assert.equal(found.pages.find((page) => page.path === "/dashboard/settings").loading, join(app, "dashboard", "loading.tsx"));
+    assert.equal(found.pages.find((page) => page.path === "/reports").loading, join(app, "loading.tsx"));
     assert.equal(found.api.length, 1);
     assert.equal(found.api[0].path, "/api/users/:id");
   } finally {

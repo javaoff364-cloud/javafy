@@ -4,7 +4,7 @@ export default function AboutPage({ renderedAt }: { renderedAt?: string }) {
   const router = useRouter();
   return (
     <main style={{ maxWidth: 720, margin: "10vh auto", padding: 24 }}>
-      <h1>About Javafy 0.4.0</h1>
+      <h1>About Javafy 0.8.0</h1>
       <p style={{ color: "#a8b4c7", lineHeight: 1.8 }}>
         This page is rendered on the server for each request.
       </p>

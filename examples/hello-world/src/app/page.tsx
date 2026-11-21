@@ -3,7 +3,7 @@ import { Link } from "@javafy/router";
 export default function HomePage() {
   return (
     <main style={{ maxWidth: 760, margin: "12vh auto", padding: 24 }}>
-      <p style={{ color: "#7dd3fc", fontWeight: 700 }}>Javafy 0.5.0 — FULLSTACK</p>
+      <p style={{ color: "#7dd3fc", fontWeight: 700 }}>Javafy 0.8.0 — FULLSTACK</p>
       <h1 style={{ fontSize: "clamp(2.5rem, 8vw, 4.5rem)", margin: "12px 0" }}>
         Hello, Javafy.
       </h1>
