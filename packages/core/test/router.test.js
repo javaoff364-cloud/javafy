@@ -58,3 +58,20 @@ test("rejects malformed percent encoding", () => {
 test("does not allow a catch-all segment before another route segment", () => {
   assert.equal(matchRoute("/docs/a/end", [{ path: "/docs/*slug/end" }]), null);
 });
+
+
+test("rejects invalid route patterns and duplicate parameter names", async () => {
+  const { isValidRoutePattern } = await import("../dist/router.js");
+  assert.equal(isValidRoutePattern("/users/:id"), true);
+  assert.equal(isValidRoutePattern("/docs/*path?"), true);
+  assert.equal(isValidRoutePattern("/users/:id/:id"), false);
+  assert.equal(isValidRoutePattern("/docs/*path/end"), false);
+  assert.equal(isValidRoutePattern("/users/:bad-name"), false);
+  assert.equal(isValidRoutePattern("/docs/*"), false);
+});
+
+test("skips invalid route patterns instead of matching them", async () => {
+  const { isValidRoutePattern } = await import("../dist/router.js");
+  assert.equal(isValidRoutePattern("/users/:id/:id"), false);
+  assert.equal(matchRoute("/users/a/b", [{ path: "/users/:id/:id" }, { path: "/users/:first/:second" }])?.route.path, "/users/:first/:second");
+});
