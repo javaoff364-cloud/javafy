@@ -192,3 +192,24 @@ window.$RefreshReg$ = (type, id) => RefreshRuntime.register(type, window.__JAVAF
 window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;`;
 
 export const FAST_REFRESH_FOOTER = `if (window.__JAVAFY_REFRESH_RUNTIME__) window.__JAVAFY_REFRESH_RUNTIME__.performReactRefresh();`;
+
+export interface JavafyServerOptions {
+  host: string;
+  port: number;
+}
+
+/** Resolve and validate production server host/port overrides. */
+export function resolveServerOptions(
+  config: { dev: { host: string; port: number } },
+  env: { HOST?: string; PORT?: string } = {}
+): JavafyServerOptions {
+  const host = env.HOST ?? config.dev.host;
+  const port = env.PORT === undefined ? config.dev.port : Number(env.PORT);
+  if (typeof host !== "string" || host.trim() === "") {
+    throw new Error("Javafy: HOST must be a non-empty hostname or IP address.");
+  }
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("Javafy: PORT must be an integer between 1 and 65535.");
+  }
+  return { host, port };
+}
