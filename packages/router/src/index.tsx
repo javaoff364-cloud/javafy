@@ -141,7 +141,7 @@ export function createRouter(options: {
         const nextLocation = readBrowserLocation();
         const currentId = ++navigationId.current;
         setLocation(nextLocation);
-        setNavigationData(null);
+        setNavigationData({ status: 200, props: {} });
         if (!options.loadData) return;
         try {
           const url = new URL(window.location.href);
