@@ -8,6 +8,7 @@ import {
   useState,
   type AnchorHTMLAttributes,
   type ComponentType,
+  type FocusEvent,
   type MouseEvent,
   type ReactNode
 } from "react";
@@ -36,6 +37,7 @@ export interface JavafyRouterValue extends JavafyPageProps {
   navigate: (to: string, options?: { replace?: boolean }) => void;
   back: () => void;
   forward: () => void;
+  prefetch: (to: string) => void;
 }
 
 interface LocationSnapshot {
@@ -92,12 +94,28 @@ export function Link({
   href,
   replace,
   onClick,
+  onMouseEnter,
+  onFocus,
   children,
   ...props
 }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; replace?: boolean }) {
+  const router = useContext(RouterContext);
+  const prefetch = () => {
+    if (!router || typeof window === "undefined") return;
+    const url = new URL(href, window.location.href);
+    if (url.origin === window.location.origin) router.prefetch(url.pathname + url.search);
+  };
   return createElement("a", {
     ...props,
     href,
+    onMouseEnter: (event: MouseEvent<HTMLAnchorElement>) => {
+      onMouseEnter?.(event);
+      if (!event.defaultPrevented) prefetch();
+    },
+    onFocus: (event: FocusEvent<HTMLAnchorElement>) => {
+      onFocus?.(event);
+      if (!event.defaultPrevented) prefetch();
+    },
     onClick: (event: MouseEvent<HTMLAnchorElement>) => {
       onClick?.(event);
       if (
@@ -136,6 +154,28 @@ export function createRouter(options: {
     const [navigationData, setNavigationData] = useState<JavafyNavigationData | null>(null);
     const [isNavigating, setIsNavigating] = useState(false);
     const navigationId = useRef(0);
+    const prefetchedData = useRef(new Map<string, Promise<JavafyNavigationData>>());
+
+    const prefetch = (to: string) => {
+      if (!options.loadData || typeof window === "undefined") return;
+      const url = new URL(to, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      const key = url.pathname + url.search;
+      if (prefetchedData.current.has(key)) return;
+
+      const pending = options.loadData(url).catch((error) => {
+        prefetchedData.current.delete(key);
+        throw error;
+      });
+      // A hover/focus prefetch may never be consumed; handle its rejection now.
+      void pending.catch(() => {});
+      // Bound memory if a user explores many links without navigating.
+      if (prefetchedData.current.size >= 32) {
+        const oldest = prefetchedData.current.keys().next().value;
+        if (oldest !== undefined) prefetchedData.current.delete(oldest);
+      }
+      prefetchedData.current.set(key, pending);
+    };
 
     useEffect(() => {
       let active = true;
@@ -151,7 +191,10 @@ export function createRouter(options: {
         setIsNavigating(true);
         try {
           const url = new URL(window.location.href);
-          const result = await options.loadData(url);
+          const key = url.pathname + url.search;
+          const cached = prefetchedData.current.get(key);
+          const result = await (cached ?? options.loadData(url));
+          prefetchedData.current.delete(key);
           if (active && navigationId.current === currentId) {
             setNavigationData(result);
             setIsNavigating(false);
@@ -215,7 +258,8 @@ export function createRouter(options: {
       hash: location.hash,
       navigate,
       back: () => window.history.back(),
-      forward: () => window.history.forward()
+      forward: () => window.history.forward(),
+      prefetch
     }), [location, params]);
 
     return createElement(RouterContext.Provider, { value }, content);
