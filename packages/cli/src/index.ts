@@ -171,6 +171,7 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
           }),
           "  ],",
           ...(discovered.notFound ? [`  notFound: ${importFor(discovered.notFound)},`] : []),
+          `  loadData: async (url) => { const response = await fetch("/__javafy/data?url=" + encodeURIComponent(url.pathname + url.search), { headers: { Accept: "application/json" } }); if (!response.ok) throw new Error("Javafy navigation data request failed (" + response.status + ")."); return response.json(); },`,
           "});",
           'const root = document.getElementById("root");',
           'if (!root) throw new Error("Javafy: #root element was not found.");',
@@ -221,6 +222,38 @@ async function sendWebResponse(response: Response, target: ServerResponse): Prom
   target.writeHead(response.status, Object.fromEntries(response.headers.entries()));
   target.end(Buffer.from(await response.arrayBuffer()));
 }
+
+async function sendNavigationData(
+  request: IncomingMessage,
+  manifest: Awaited<ReturnType<typeof loadFullstackManifest>>,
+  response: ServerResponse
+): Promise<void> {
+  try {
+    const incoming = await toWebRequest(request);
+    const endpoint = new URL(incoming.url);
+    const targetPath = endpoint.searchParams.get("url");
+    if (!targetPath || !targetPath.startsWith("/") || targetPath.startsWith("//")) {
+      response.writeHead(400, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+      response.end(JSON.stringify({ error: "Invalid navigation URL." }));
+      return;
+    }
+    const target = new URL(targetPath, endpoint.origin);
+    if (target.origin !== endpoint.origin || target.pathname.startsWith("/__javafy/")) {
+      response.writeHead(400, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+      response.end(JSON.stringify({ error: "Invalid navigation URL." }));
+      return;
+    }
+    const pageRequest = new Request(target.href, { headers: incoming.headers });
+    const rendered = await renderFullstackPage(manifest, target.pathname, { request: pageRequest });
+    response.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+    response.end(JSON.stringify({ props: rendered?.props ?? {}, status: rendered?.status ?? 404 }).replace(/</g, "\\u003c"));
+  } catch (error) {
+    console.error("Javafy: navigation data request failed", error);
+    response.writeHead(500, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+    response.end(JSON.stringify({ error: "Navigation data could not be loaded." }));
+  }
+}
+
 
 function renderHtmlDocument(
   shell: string,
@@ -463,6 +496,11 @@ async function dev(): Promise<void> {
       return;
     }
 
+    if (pathname === "/__javafy/data") {
+      await sendNavigationData(request, manifest, response);
+      return;
+    }
+
     if (pathname === "/api" || pathname.startsWith("/api/")) {
       try {
         const webRequest = await toWebRequest(request);
@@ -633,6 +671,11 @@ async function start(): Promise<void> {
       pathname = new URL(request.url ?? "/", "http://localhost").pathname;
     } catch {
       sendText(response, 400, "Bad request");
+      return;
+    }
+
+    if (pathname === "/__javafy/data") {
+      await sendNavigationData(request, manifest, response);
       return;
     }
 

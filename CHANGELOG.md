@@ -3,10 +3,12 @@
 ## Unreleased — 0.7.0 development
 
 - Extended the router context with `searchParams` and `hash`, so query-string and fragment changes are represented in router state.
-- Updated the router location snapshot on client navigation and browser back/forward events.
-- Added router tests for initial query-string and hash state.
-
-This is an in-progress development entry, not a published release. Fullstack navigation still uses document requests while the state-preserving client transition work is being developed.
+- Added fullstack client transitions for same-origin links and `navigate()`, without reloading the document.
+- Added an internal navigation-data endpoint that reruns request-time server loaders and returns fresh page props.
+- Integrated browser Back/Forward with the same route-data refresh flow.
+- Kept shared layouts mounted across route changes where their component identity is unchanged.
+- Preserved ordinary browser behavior for external links, modified clicks, and download links.
+- Added regression coverage for request-specific loader props and query-string data.
 
 ## 0.6.0 — Stability and Production Hardening
 

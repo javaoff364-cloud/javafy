@@ -230,7 +230,9 @@ export async function renderFullstackPage(
       layouts: page.layouts
     }],
     ...(manifest.notFound ? { notFound: manifest.notFound } : {}),
-    initialPathname: pathname
+    initialPathname: options.request
+      ? new URL(options.request.url).pathname + new URL(options.request.url).search
+      : pathname
   });
   return { html: renderToString(createElement(Router)), props, status: 200 };
 }

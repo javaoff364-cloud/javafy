@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type AnchorHTMLAttributes,
   type ComponentType,
@@ -29,9 +30,7 @@ export interface JavafyRoute extends RouteDefinition {
 }
 
 export interface JavafyRouterValue extends JavafyPageProps {
-  /** Current URL query parameters. Updated on push, replace, and browser history navigation. */
   searchParams: URLSearchParams;
-  /** Current URL hash, including the leading #, or an empty string. */
   hash: string;
   navigate: (to: string, options?: { replace?: boolean }) => void;
   back: () => void;
@@ -42,6 +41,11 @@ interface LocationSnapshot {
   pathname: string;
   search: string;
   hash: string;
+}
+
+export interface JavafyNavigationData {
+  props: Record<string, unknown>;
+  status: number;
 }
 
 const RouterContext = createContext<JavafyRouterValue | null>(null);
@@ -56,7 +60,7 @@ function readBrowserLocation(): LocationSnapshot {
   return getLocationSnapshot(window.location.href);
 }
 
-/** Navigate without a full page reload when the application is running in SPA mode. */
+/** Navigate with browser history and notify the active Javafy router. */
 export function navigate(to: string, options: { replace?: boolean } = {}): void {
   if (typeof window === "undefined") return;
   const url = new URL(to, window.location.href);
@@ -65,7 +69,9 @@ export function navigate(to: string, options: { replace?: boolean } = {}): void 
     return;
   }
   if ((window as Window & { __JAVAFY_FULLSTACK__?: boolean }).__JAVAFY_FULLSTACK__) {
-    window.location.assign(url.href);
+    if (options.replace) window.history.replaceState({}, "", url);
+    else window.history.pushState({}, "", url);
+    window.dispatchEvent(new Event(NAVIGATION_EVENT));
     return;
   }
   if (options.replace) window.history.replaceState({}, "", url);
@@ -100,7 +106,8 @@ export function Link({
         event.ctrlKey ||
         event.shiftKey ||
         event.altKey ||
-        props.target === "_blank"
+        props.target === "_blank" ||
+        props.download !== undefined
       ) return;
       const url = new URL(href, window.location.href);
       if (url.origin !== window.location.origin) return;
@@ -115,6 +122,7 @@ export function createRouter(options: {
   routes: JavafyRoute[];
   notFound?: ComponentType<JavafyPageProps>;
   initialPathname?: string;
+  loadData?: (url: URL) => Promise<JavafyNavigationData>;
 }): ComponentType {
   const Router = function JavafyRouter() {
     const [location, setLocation] = useState<LocationSnapshot>(() =>
@@ -124,12 +132,34 @@ export function createRouter(options: {
           ? getLocationSnapshot("/")
           : readBrowserLocation()
     );
+    const [navigationData, setNavigationData] = useState<JavafyNavigationData | null>(null);
+    const navigationId = useRef(0);
 
     useEffect(() => {
-      const update = () => setLocation(readBrowserLocation());
+      let active = true;
+      const update = async () => {
+        const nextLocation = readBrowserLocation();
+        const currentId = ++navigationId.current;
+        setLocation(nextLocation);
+        setNavigationData({ status: 200, props: {} });
+        if (!options.loadData) return;
+        try {
+          const url = new URL(window.location.href);
+          const result = await options.loadData(url);
+          if (active && navigationId.current === currentId) setNavigationData(result);
+        } catch (error) {
+          if (active && navigationId.current === currentId) {
+            setNavigationData({
+              status: 500,
+              props: { __javafyNavigationError: error instanceof Error ? error.message : "Navigation failed" }
+            });
+          }
+        }
+      };
       window.addEventListener("popstate", update);
       window.addEventListener(NAVIGATION_EVENT, update);
       return () => {
+        active = false;
         window.removeEventListener("popstate", update);
         window.removeEventListener(NAVIGATION_EVENT, update);
       };
@@ -140,11 +170,19 @@ export function createRouter(options: {
       () => matchRoute(pathname, options.routes),
       [pathname]
     );
+    const notFound = navigationData?.status === 404;
+    const navigationFailed = (navigationData?.status ?? 0) >= 500;
+    const route = notFound || navigationFailed ? undefined : matched?.route;
     const params = matched?.params ?? {};
-    const route = matched?.route;
-    const page = route
-      ? createElement(route.component, { ...(route.props ?? {}), params, pathname })
-      : options.notFound
+    const pageProps = navigationData?.props ?? route?.props ?? {};
+    const page = navigationFailed
+      ? createElement("main", { role: "alert" },
+          createElement("h1", null, "Navigation failed"),
+          createElement("p", null, "Javafy could not load this page. Please try again.")
+        )
+      : route
+        ? createElement(route.component, { ...pageProps, params, pathname })
+        : options.notFound
         ? createElement(options.notFound, { params, pathname })
         : createElement("main", null,
             createElement("h1", null, "404 — Page not found"),
@@ -153,7 +191,7 @@ export function createRouter(options: {
 
     const content = route
       ? (route.layouts ?? []).reduceRight<ReactNode>(
-          (child, Layout) => createElement(Layout, { children: child, params, pathname }),
+          (child, Layout) => createElement(Layout, { children: child, ...pageProps, params, pathname }),
           page
         )
       : page;

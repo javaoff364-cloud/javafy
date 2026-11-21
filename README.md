@@ -200,9 +200,7 @@ export function Navigation() {
 }
 ```
 
-`useRouter()` exposes `pathname`, `params`, `searchParams`, `hash`, `navigate()`, `back()`, and `forward()`. In SPA mode, query-string and hash-only navigation update router state without a document reload. Modified clicks and external links retain normal browser behavior.
-
-In fullstack mode, same-origin navigation still performs a document request so server-loaded props stay fresh. State-preserving fullstack client transitions are part of the 0.7.0 development milestone and are not yet available.
+`useRouter()` exposes `pathname`, `params`, `searchParams`, `hash`, `navigate()`, `back()`, and `forward()`. In SPA mode, query-string and hash-only navigation update router state without a document reload. In fullstack mode, same-origin `Link` and `navigate()` transitions also stay on the current document: Javafy requests fresh server-loader props from its internal navigation-data endpoint, updates route content, and keeps compatible shared layout components mounted. Browser Back/Forward triggers the same data refresh. Modified clicks, downloads, and external links retain normal browser behavior. Navigation data responses are not cached.
 
 ## Build and run
 
@@ -232,7 +230,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 ## Current limitations
 
-- Fullstack navigation still uses document requests to refresh server data; state-preserving client transitions are in development.
+- Fullstack client navigation currently uses a JSON data request per transition; streaming navigation, prefetching, cancellation UI, and route-level loading/error boundaries are not included.
 - `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
 - Streaming SSR, middleware, route-level loading/error boundaries, and incremental regeneration are not included yet. React Fast Refresh is development-only.
 - API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
@@ -247,7 +245,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.4.0 | Fullstack Engine | API routes, SSR, SSG, server data loaders |
 | 0.5.0 | Runtime | React Fast Refresh, HMR, error overlay, module graph |
 | 0.6.0 | Stability | Router/config validation, API hardening, production server validation, startup diagnostics and regression tests |
-| 0.7.0 | Client Navigation (in development) | State-preserving fullstack transitions, router URL state, navigation UX and developer experience |
+| 0.7.0 | Client Navigation | SPA/fullstack client transitions, server-loader refresh, router URL state, browser history integration and navigation regression coverage |
 | 1.0.0 | Production | Optimizer, caching, security, benchmarks |
 
 ## Performance
