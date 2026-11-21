@@ -80,6 +80,8 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     export default function PostPage({ params, title }) {
       return <article><h1>{title}</h1><p>{params.slug}</p></article>;
     }
+    export const revalidate = 30;
+    export function getCacheKey({ params }) { return params.slug; }
     export async function getServerSideProps({ params }) {
       return { title: "SSR: " + params.slug };
     }
@@ -119,6 +121,8 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     assert.match(serverPage.html, /Fixture layout/);
     assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").loading, "function");
     assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").error, "function");
+    assert.equal(manifest.pages.find((page) => page.path === "/posts/:slug").revalidate, 30);
+    assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").getCacheKey, "function");
 
     const brokenManifest = {
       ...manifest,
