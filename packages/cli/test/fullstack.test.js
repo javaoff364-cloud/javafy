@@ -317,5 +317,8 @@ test("server loader receives the navigation request abort signal", async () => {
   await renderFullstackPage(manifest, "/signal", {
     request: new Request("http://localhost/signal", { signal: controller.signal })
   });
-  assert.equal(receivedSignal, controller.signal);
+  assert.ok(receivedSignal);
+  assert.equal(receivedSignal.aborted, false);
+  controller.abort();
+  assert.equal(receivedSignal.aborted, true);
 });
