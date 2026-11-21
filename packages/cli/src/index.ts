@@ -90,9 +90,12 @@ function discoverRoutes(appDir: string): {
       .filter((entry) => entry.isFile() && (entry.name === "page.tsx" || entry.name === "page.ts"))
       .map((entry) => join(directory, entry.name))[0];
     const localLoading = [join(directory, "loading.tsx"), join(directory, "loading.ts")].find(existsSync);
-    const rootLoading = segments.length
-      ? [join(appDir, "loading.tsx"), join(appDir, "loading.ts")].find(existsSync)
-      : undefined;
+    let inheritedLoading = [join(appDir, "loading.tsx"), join(appDir, "loading.ts")].find(existsSync);
+    let loadingParent = appDir;
+    for (const segment of segments) {
+      loadingParent = join(loadingParent, segment);
+      inheritedLoading = [join(loadingParent, "loading.tsx"), join(loadingParent, "loading.ts")].find(existsSync) ?? inheritedLoading;
+    }
 
     if (page) {
       const routeSegments = segments.map((segment) => {
@@ -113,7 +116,7 @@ function discoverRoutes(appDir: string): {
         path: routeSegments.length ? `/${routeSegments.join("/")}` : "/",
         page,
         layouts,
-        ...((localLoading ?? rootLoading) ? { loading: localLoading ?? rootLoading } : {})
+        ...((localLoading ?? inheritedLoading) ? { loading: localLoading ?? inheritedLoading } : {})
       });
     }
 
