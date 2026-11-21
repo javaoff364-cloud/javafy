@@ -20,7 +20,7 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 - Production Node.js server for SSR and API routes, with validated `HOST`/`PORT` overrides and clear startup errors.
 - Validated route patterns and configuration, including duplicate route parameter and catch-all checks.
 - Static assets and generated HTML in `dist/`.
-- Fullstack client-side navigation with request-time loader refresh and browser Back/Forward support.
+- Fullstack client-side navigation with request-time loader refresh, browser Back/Forward support, and automatic link prefetching on hover/focus.
 - Router URL state through `searchParams` and `hash`, with compatible shared layouts kept mounted across transitions.
 
 ## Requirements
@@ -230,7 +230,7 @@ export function Navigation() {
 }
 ```
 
-`useRouter()` exposes `pathname`, `params`, `searchParams`, `hash`, `navigate()`, `back()`, and `forward()`. In SPA mode, query-string and hash-only navigation update router state without a document reload. In fullstack mode, same-origin `Link` and `navigate()` transitions also stay on the current document: Javafy requests fresh server-loader props from its internal navigation-data endpoint, updates route content, and keeps compatible shared layout components mounted. Browser Back/Forward triggers the same data refresh. Modified clicks, downloads, and external links retain normal browser behavior. Navigation data responses are not cached.
+`useRouter()` exposes `pathname`, `params`, `searchParams`, `hash`, `navigate()`, `back()`, and `forward()`. In SPA mode, query-string and hash-only navigation update router state without a document reload. In fullstack mode, same-origin `Link` and `navigate()` transitions also stay on the current document: Javafy requests fresh server-loader props from its internal navigation-data endpoint, updates route content, and keeps compatible shared layout components mounted. Browser Back/Forward triggers the same data refresh. Modified clicks, downloads, and external links retain normal browser behavior. Javafy prefetches same-origin route data when a link is hovered or receives keyboard focus, then reuses that pending request during navigation.
 
 ## Build and run
 
@@ -260,7 +260,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 ## Current limitations
 
-- Fullstack client navigation currently uses a JSON data request per transition; streaming navigation, prefetching, cancellation UI, and route-level loading/error boundaries are not included.
+- Fullstack client navigation currently uses a JSON data request per transition; streaming navigation, cancellation UI, and route-level loading/error boundaries are not included.
 - `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
 - Streaming SSR, route-level loading/error boundaries, and incremental regeneration are not included yet. React Fast Refresh is development-only.
 - API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
