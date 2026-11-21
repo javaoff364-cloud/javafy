@@ -1,4 +1,5 @@
 import {
+  Component,
   createContext,
   createElement,
   useContext,
@@ -24,10 +25,16 @@ export interface JavafyLayoutProps extends JavafyPageProps {
   children: ReactNode;
 }
 
+export interface JavafyErrorProps extends JavafyPageProps {
+  error: Error;
+  reset: () => void;
+}
+
 export interface JavafyRoute extends RouteDefinition {
   component: ComponentType<JavafyPageProps>;
   layouts?: ComponentType<JavafyLayoutProps>[];
   loading?: ComponentType<JavafyPageProps>;
+  error?: ComponentType<JavafyErrorProps>;
   props?: Record<string, unknown>;
 }
 
@@ -49,6 +56,42 @@ interface LocationSnapshot {
 export interface JavafyNavigationData {
   props: Record<string, unknown>;
   status: number;
+}
+
+class RouteErrorBoundary extends Component<{
+  fallback?: ComponentType<JavafyErrorProps>;
+  params: Record<string, string>;
+  pathname: string;
+  children: ReactNode;
+}, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+
+  static getDerivedStateFromError(error: unknown): { error: Error } {
+    return { error: error instanceof Error ? error : new Error(String(error)) };
+  }
+
+  reset = (): void => {
+    this.setState({ error: null });
+  };
+
+  render(): ReactNode {
+    if (this.state.error) {
+      if (this.props.fallback) {
+        return createElement(this.props.fallback, {
+          error: this.state.error,
+          reset: this.reset,
+          params: this.props.params,
+          pathname: this.props.pathname
+        });
+      }
+      return createElement("main", { role: "alert" },
+        createElement("h1", null, "Something went wrong"),
+        createElement("p", null, "This page could not be rendered."),
+        createElement("button", { type: "button", onClick: this.reset }, "Try again")
+      );
+    }
+    return this.props.children;
+  }
 }
 
 const RouterContext = createContext<JavafyRouterValue | null>(null);
@@ -228,28 +271,44 @@ export function createRouter(options: {
     const route = notFound || navigationFailed ? undefined : matched?.route;
     const params = matched?.params ?? {};
     const pageProps = navigationData?.props ?? route?.props ?? {};
-    const page = navigationFailed
-      ? createElement("main", { role: "alert" },
-          createElement("h1", null, "Navigation failed"),
-          createElement("p", null, "Javafy could not load this page. Please try again.")
-        )
-      : isNavigating && route?.loading
-        ? createElement(route.loading, { params, pathname })
-        : route
-          ? createElement(route.component, { ...pageProps, params, pathname })
-        : options.notFound
-        ? createElement(options.notFound, { params, pathname })
-        : createElement("main", null,
-            createElement("h1", null, "404 — Page not found"),
-            createElement("p", null, `No Javafy route matches ${pathname}`)
-          );
+    const page = navigationFailed && route?.error
+      ? createElement(route.error, {
+          error: new Error(String(pageProps.__javafyNavigationError ?? "Navigation failed")),
+          reset: () => navigate(pathname + location.search + location.hash),
+          params,
+          pathname
+        })
+      : navigationFailed
+        ? createElement("main", { role: "alert" },
+            createElement("h1", null, "Navigation failed"),
+            createElement("p", null, "Javafy could not load this page. Please try again.")
+          )
+        : isNavigating && route?.loading
+          ? createElement(route.loading, { params, pathname })
+          : route
+            ? createElement(route.component, { ...pageProps, params, pathname })
+          : options.notFound
+          ? createElement(options.notFound, { params, pathname })
+          : createElement("main", null,
+              createElement("h1", null, "404 — Page not found"),
+              createElement("p", null, `No Javafy route matches ${pathname}`)
+            );
 
-    const content = route
+    const routedContent = route
       ? (route.layouts ?? []).reduceRight<ReactNode>(
           (child, Layout) => createElement(Layout, { children: child, ...pageProps, params, pathname }),
           page
         )
       : page;
+    const content = route
+      ? createElement(RouteErrorBoundary, {
+          key: pathname,
+          fallback: route.error,
+          params,
+          pathname,
+          children: routedContent
+        })
+      : routedContent;
 
     const value = useMemo<JavafyRouterValue>(() => ({
       pathname,

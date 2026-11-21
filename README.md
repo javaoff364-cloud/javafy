@@ -10,7 +10,7 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 
 - TypeScript and TSX compilation powered by esbuild.
 - React 19 application runtime.
-- File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), nested layouts, and route-level loading UI.
+- File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), nested layouts, route-level loading UI, and inherited route error boundaries.
 - File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
 - File-based request middleware for API, SSR, and client-navigation data requests, with ordered execution, short-circuit responses, and request replacement.
 - Server-side rendering (SSR) for page requests.
@@ -110,6 +110,26 @@ export default function Loading() {
 ```
 
 The loading component is rendered inside the route's shared layouts and is only shown during client-side data transitions; initial SSR/SSG rendering remains unchanged.
+
+### Route error UI
+
+Add an `error.tsx` file beside a page to provide a fallback for rendering or loader errors. A root `src/app/error.tsx` is inherited by routes without a closer error file; the nearest route-level file takes precedence.
+
+```tsx
+import type { JavafyErrorProps } from "@javafy/router";
+
+export default function ErrorPage({ error, reset }: JavafyErrorProps) {
+  return (
+    <main role="alert">
+      <h1>Something went wrong</h1>
+      <p>{error.message}</p>
+      <button onClick={reset}>Try again</button>
+    </main>
+  );
+}
+```
+
+The fallback receives the original `Error`, route `params`, `pathname`, and a `reset()` callback. Client-side render failures are caught without replacing the shared router; SSR and server-loader failures render the same route fallback with HTTP 500. If no `error.tsx` exists, Javafy displays its built-in generic error UI.
 
 ```tsx
 import type { ReactNode } from "react";
@@ -274,7 +294,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 - Fullstack client navigation currently uses JSON data requests; streaming navigation and cancellation UI are not included.
 - `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
-- Streaming SSR, route-level error boundaries, and incremental regeneration are not included yet. React Fast Refresh is development-only.
+- Streaming SSR and incremental regeneration are not included yet. React Fast Refresh is development-only.
 - API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
 
 ## Roadmap
@@ -294,7 +314,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 ### 0.9.0 planned scope
 
-Javafy 0.9.0 is planned as a reliability-focused release. These items are goals, not features available in 0.8.0:
+Javafy 0.9.0 is planned as a reliability-focused release. These items describe the 0.9.0 release plan; completed items will be marked in the feature documentation as they land.
 
 - **Route error boundaries:** file-based error UI with predictable nearest-route fallback behavior.
 - **Navigation cancellation:** prevent stale route-data requests from replacing newer navigation results, and expose a clear pending/cancelled state.
