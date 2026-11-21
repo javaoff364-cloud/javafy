@@ -268,6 +268,7 @@ function injectDevScripts(html: string): string {
 
 async function dev(): Promise<void> {
   const config = resolveConfig(await loadConfig());
+  const serverOptions = resolveServerOptions(config);
   const root = process.cwd();
   const appDir = resolve(root, config.appDir);
   const entryConfig = entryOptions(root, appDir);
@@ -527,14 +528,14 @@ async function dev(): Promise<void> {
   });
 
   try {
-    await listenServer(server, config.dev.port, config.dev.host);
+    await listenServer(server, serverOptions.port, serverOptions.host);
   } catch (error) {
     for (const watcher of manifestWatchers.values()) watcher.close();
     if (manifestReloadTimer) clearTimeout(manifestReloadTimer);
     await context.dispose();
     throw error;
   }
-  console.log(`\n  Javafy ${JAVAFY_VERSION} dev server: http://${config.dev.host}:${config.dev.port}\n`);
+  console.log(`\n  Javafy ${JAVAFY_VERSION} dev server: http://${serverOptions.host}:${serverOptions.port}\n`);
   console.log(`  File-based routing: ${entryConfig.usesRouter ? "enabled" : "not detected"}`);
   console.log("  TypeScript/TSX compiler: enabled");
   console.log("  Live reload: enabled\n");
