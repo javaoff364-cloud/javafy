@@ -212,7 +212,26 @@ export default function ProfilePage({ userAgent }: { userAgent: string }) {
 }
 ```
 
-The returned object is passed as page props. This loader runs for each server request and is not included in the browser bundle.
+The returned object is passed as page props. This loader runs on the server and is not included in the browser bundle. By default, request-time loader results are never cached.
+
+### Server loader caching
+
+Opt in to in-memory caching by exporting both `revalidate` (a positive number of seconds) and `getCacheKey` from the page module. The cache key must include every input that can change the result, including relevant user or authorization context:
+
+```tsx
+export const revalidate = 30;
+
+export function getCacheKey({ params, searchParams, request }) {
+  const userId = request?.headers.get("x-user-id") ?? "anonymous";
+  return [userId, params.id, searchParams?.get("locale") ?? "en"].join(":");
+}
+
+export async function getServerSideProps({ params, request }) {
+  return { id: params.id, userAgent: request?.headers.get("user-agent") };
+}
+```
+
+Only successful `getServerSideProps` results are cached. Entries expire after `revalidate` seconds and the per-process cache is bounded to 500 entries. No cache is shared between server instances; static generation is unaffected. If either export is omitted or the key is empty, the loader runs for every request. Do not use a shared cache key for user-specific data.
 
 ## Static site generation
 
@@ -292,9 +311,9 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 ## Current limitations
 
-- Fullstack client navigation currently uses JSON data requests; streaming navigation and cancellation UI are not included.
+- Fullstack client navigation currently uses JSON data requests; streaming navigation is not included.
 - `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
-- Streaming SSR and incremental regeneration are not included yet. React Fast Refresh is development-only.
+- Streaming SSR and `getStaticPaths` fallback modes are not included. React Fast Refresh is development-only.
 - API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
 
 ## Roadmap
@@ -309,19 +328,19 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.6.0 | Stability | Router/config validation, API hardening, production server validation, startup diagnostics and regression tests |
 | 0.7.0 | Client Navigation | SPA/fullstack client transitions, server-loader refresh, router URL state, browser history integration and navigation regression coverage |
 | 0.8.0 | Request Middleware & Navigation UX | Composable middleware across API/SSR/navigation requests, inherited route-level loading UI, same-origin link prefetching, and regression coverage |
-| 0.9.0 | Reliability & Data UX | Route error boundaries, navigation cancellation, cache/revalidation primitives, and stronger runtime diagnostics |
+| 0.9.0 | Reliability & Data UX | Route error boundaries, abortable navigation, explicit server-loader cache/revalidation, and runtime diagnostics |
 | 1.0.0 | Production | Bundle optimization, production security hardening, reproducible benchmarks, and deployment guidance |
 
 ### 0.9.0 planned scope
 
-Javafy 0.9.0 is planned as a reliability-focused release. These items describe the 0.9.0 release plan; completed items will be marked in the feature documentation as they land.
+Javafy 0.9.0 adds reliability-focused routing and data primitives:
 
-- **Route error boundaries:** file-based error UI with predictable nearest-route fallback behavior.
-- **Navigation cancellation:** prevent stale route-data requests from replacing newer navigation results, and expose a clear pending/cancelled state.
-- **Cache and revalidation primitives:** explicit, documented controls for server-loader caching and freshness rather than implicit caching.
-- **Runtime diagnostics:** clearer route, loader, and middleware errors with regression tests covering development and production behavior.
+- **Route error boundaries:** file-based `error.tsx` UI with nearest-ancestor fallback, retry support, and server-render fallback behavior.
+- **Navigation cancellation:** superseded client transitions abort the previous route-data fetch; the abort signal reaches the server loader through `request.signal`.
+- **Cache and revalidation:** opt-in `revalidate` seconds plus a required `getCacheKey` function; successful loader results are stored in a bounded per-process cache. No implicit caching is performed.
+- **Runtime diagnostics:** route-aware loader and cache-key failures are logged with a `[Javafy diagnostics]` prefix.
 
-The exact scope may be adjusted based on issues and compatibility testing. Streaming SSR and `getStaticPaths` fallback modes remain separate design decisions and are not promised for 0.9.0.
+The cache is per process, not distributed. Streaming SSR and `getStaticPaths` fallback modes remain outside this release.
 
 ## Performance
 
