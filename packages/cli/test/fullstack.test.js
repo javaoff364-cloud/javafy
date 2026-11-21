@@ -277,3 +277,41 @@ test("server loader results are not cached without an explicit cache key and rev
   await renderFullstackPage(manifest, "/uncached", { request: new Request("http://localhost/uncached") });
   assert.equal(calls, 2);
 });
+
+
+test("server loader cache expires after the configured revalidation interval", async () => {
+  let calls = 0;
+  const manifest = {
+    pages: [{
+      path: "/expiring", component: () => null, layouts: [], revalidate: 1,
+      getCacheKey: () => "stable",
+      getServerSideProps: async () => ({ call: ++calls })
+    }],
+    apiRoutes: []
+  };
+  const request = () => new Request("http://localhost/expiring");
+  await renderFullstackPage(manifest, "/expiring", { request: request() });
+  await new Promise((resolve) => setTimeout(resolve, 1050));
+  const refreshed = await renderFullstackPage(manifest, "/expiring", { request: request() });
+  assert.equal(calls, 2);
+  assert.deepEqual(refreshed.props, { call: 2 });
+});
+
+test("server loader receives the navigation request abort signal", async () => {
+  let receivedSignal;
+  const controller = new AbortController();
+  const manifest = {
+    pages: [{
+      path: "/signal", component: () => null, layouts: [],
+      getServerSideProps: async ({ request }) => {
+        receivedSignal = request.signal;
+        return { ok: true };
+      }
+    }],
+    apiRoutes: []
+  };
+  await renderFullstackPage(manifest, "/signal", {
+    request: new Request("http://localhost/signal", { signal: controller.signal })
+  });
+  assert.equal(receivedSignal, controller.signal);
+});
