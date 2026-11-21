@@ -40,6 +40,34 @@ function compareSpecificity(a: string[], b: string[]): number {
   return b.length - a.length;
 }
 
+/** Returns whether a route pattern uses valid dynamic parameter syntax. */
+export function isValidRoutePattern(pattern: string): boolean {
+  const segments = normalizePathname(pattern, true).split("/").filter(Boolean);
+  const names = new Set<string>();
+
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = segments[index] ?? "";
+    if (segment.startsWith(":")) {
+      const name = segment.slice(1);
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) || names.has(name)) return false;
+      names.add(name);
+      continue;
+    }
+
+    if (segment.startsWith("*")) {
+      const optional = segment.endsWith("?");
+      const name = segment.slice(1, optional ? -1 : undefined);
+      if (index !== segments.length - 1 || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) || names.has(name)) return false;
+      names.add(name);
+      continue;
+    }
+
+    // Static segments cannot contain route-parameter syntax.
+    if (segment.includes(":") || segment.includes("*")) return false;
+  }
+  return true;
+}
+
 /** Match routes by segment specificity. Static segments outrank dynamic and catch-all segments. */
 export function matchRoute<T extends RouteDefinition>(
   pathname: string,
@@ -48,6 +76,7 @@ export function matchRoute<T extends RouteDefinition>(
   const current = normalizePathname(pathname);
   const currentSegments = current.split("/").filter(Boolean);
   const ranked = routes
+    .filter((route) => isValidRoutePattern(route.path))
     .map((route, index) => ({
       route,
       index,
