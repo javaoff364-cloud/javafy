@@ -467,7 +467,8 @@ async function dev(): Promise<void> {
         const webRequest = await toWebRequest(request);
         await sendWebResponse(await apiHandler(webRequest), response);
       } catch (error) {
-        sendText(response, 500, error instanceof Error ? error.message : "Internal server error");
+        console.error("Javafy: API request failed", error);
+        sendText(response, 500, "Internal server error");
       }
       return;
     }
@@ -633,7 +634,8 @@ async function start(): Promise<void> {
       try {
         await sendWebResponse(await apiHandler(await toWebRequest(request)), response);
       } catch (error) {
-        sendText(response, 500, error instanceof Error ? error.message : "Internal server error");
+        console.error("Javafy: API request failed", error);
+        sendText(response, 500, "Internal server error");
       }
       return;
     }
