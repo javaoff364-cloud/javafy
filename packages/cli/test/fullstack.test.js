@@ -57,6 +57,9 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
       return <div><header>Fixture layout</header>{children}</div>;
     }
   `);
+  writeFileSync(join(app, "posts", "[slug]", "loading.tsx"), `
+    export default function Loading() { return <p>Loading post</p>; }
+  `);
   writeFileSync(join(app, "posts", "[slug]", "page.tsx"), `
     export default function PostPage({ params, title }) {
       return <article><h1>{title}</h1><p>{params.slug}</p></article>;
@@ -98,7 +101,7 @@ test("builds a server manifest and renders SSR, SSG, API, and custom 404", async
     assert.equal(serverPage.status, 200);
     assert.match(serverPage.html, /SSR: hello/);
     assert.match(serverPage.html, /Fixture layout/);
-    assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").loading, "undefined");
+    assert.equal(typeof manifest.pages.find((page) => page.path === "/posts/:slug").loading, "function");
 
     assert.deepEqual(await getStaticRoutePaths(manifest), ["/static/prebuilt"]);
     const staticPage = await renderFullstackPage(manifest, "/static/prebuilt", { static: true });
