@@ -128,7 +128,7 @@ Javafy automatically matches dynamic API parameters, returns 404 for unknown end
 
 ## API middleware
 
-Create `src/app/middleware.ts` to run middleware before every file-based API route. Export one default middleware function:
+Create `src/app/middleware.ts` to run middleware before file-based API routes, server-rendered page requests, and client-navigation data requests. Export one default middleware function:
 
 ```ts
 export default async function middleware(
@@ -151,7 +151,7 @@ export default async function middleware(
 }
 ```
 
-Middleware runs in registration order before the API handler and unwinds in reverse order after it. Return a response without calling `next()` to stop the request. Call `next()` at most once; it may receive a replacement `Request` for downstream handlers. The initial middleware release applies to API routes in both development and production servers; page rendering and static asset requests do not pass through this pipeline.
+Middleware runs in registration order before the API handler and unwinds in reverse order after it. Return a response without calling `next()` to stop the request. Call `next()` at most once; it may receive a replacement `Request` for downstream handlers. Middleware runs for API routes, SSR page requests, and `/__javafy/data` navigation requests in both development and production servers. Static assets and build-time SSG rendering do not pass through this request pipeline.
 
 ## Server-side rendering and data
 
