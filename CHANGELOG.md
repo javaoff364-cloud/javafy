@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0 — API Middleware
+
+- Added a composable request middleware pipeline to the server package.
+- Added file-based middleware discovery through `src/app/middleware.ts`.
+- Applied middleware to API routes in development and production servers.
+- Added ordered execution, response short-circuiting, downstream request replacement, and duplicate-`next()` protection.
+- Added server and CLI regression tests for middleware composition and manifest loading.
+
+Current scope: middleware wraps file-based API requests. Page rendering, navigation-data requests, and static assets are not yet included.
+
 ## 0.7.0 — Client Navigation
 
 - Extended the router context with `searchParams` and `hash`, so query-string and fragment changes are represented in router state.
