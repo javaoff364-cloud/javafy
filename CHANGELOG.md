@@ -1,12 +1,14 @@
 # Changelog
 
-## 0.8.0 — API Middleware
+## 0.8.0 — Middleware and Navigation Improvements
 
 - Added a composable request middleware pipeline to the server package.
 - Added file-based middleware discovery through `src/app/middleware.ts`.
 - Applied middleware to API routes, SSR page requests, and client-navigation data requests in development and production servers.
 - Added ordered execution, response short-circuiting, downstream request replacement, and duplicate-`next()` protection.
 - Added server and CLI regression tests for middleware composition and manifest loading.
+- Added automatic same-origin link data prefetching on pointer hover and keyboard focus.
+- Reuses prefetched navigation data when the user follows the link; failed prefetches are discarded so navigation can retry.
 
 Current scope: middleware wraps API, SSR page, and navigation-data requests. Static assets and build-time SSG rendering are not wrapped.
 
