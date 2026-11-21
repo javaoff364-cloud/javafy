@@ -201,7 +201,7 @@ export interface JavafyServerOptions {
 
 /** Resolve and validate production server host/port overrides. */
 export function resolveServerOptions(
-  config: { dev: { host: string; port: number } },
+  config: { dev: { host?: string; port?: number } },
   env: { HOST?: string; PORT?: string } = {}
 ): JavafyServerOptions {
   const host = env.HOST ?? config.dev.host;
@@ -209,7 +209,7 @@ export function resolveServerOptions(
   if (typeof host !== "string" || host.trim() === "") {
     throw new Error("Javafy: HOST must be a non-empty hostname or IP address.");
   }
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  if (typeof port !== "number" || !Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error("Javafy: PORT must be an integer between 1 and 65535.");
   }
   return { host, port };
