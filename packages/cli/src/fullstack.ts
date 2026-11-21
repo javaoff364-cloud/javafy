@@ -3,7 +3,7 @@ import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createElement, type ComponentType } from "react";
 import { renderToString } from "react-dom/server";
-import { createRouter, type JavafyLayoutProps, type JavafyPageProps } from "@javafy/router";
+import { createRouter, type JavafyErrorProps, type JavafyLayoutProps, type JavafyPageProps } from "@javafy/router";
 import { matchRoute, type RouteDefinition } from "@javafy/core";
 import type { ApiRouteDefinition, JavafyMiddleware } from "@javafy/server";
 import { build } from "esbuild";
@@ -34,6 +34,7 @@ export interface FullstackPage extends RouteDefinition {
   getStaticProps?: DataLoader;
   getStaticPaths?: PageModule["getStaticPaths"];
   loading?: ComponentType<JavafyPageProps>;
+  error?: ComponentType<JavafyErrorProps>;
 }
 
 export interface FullstackManifest {
@@ -44,7 +45,7 @@ export interface FullstackManifest {
 }
 
 export interface DiscoveredFiles {
-  pages: Array<{ path: string; page: string; layouts: string[]; loading?: string }>;
+  pages: Array<{ path: string; page: string; layouts: string[]; loading?: string; error?: string }>;
   api: Array<{ path: string; file: string }>;
   notFound?: string;
   middleware?: string;
@@ -77,10 +78,14 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
     const pageFile = findFile(directory, ["page.tsx", "page.ts"]);
     const loadingFile = findFile(directory, ["loading.tsx", "loading.ts"]);
     let inheritedLoading = findFile(appDir, ["loading.tsx", "loading.ts"]);
+    let inheritedError = findFile(appDir, ["error.tsx", "error.ts"]);
     let loadingParent = appDir;
+    let errorParent = appDir;
     for (const segment of segments) {
       loadingParent = resolve(loadingParent, segment);
+      errorParent = resolve(errorParent, segment);
       inheritedLoading = findFile(loadingParent, ["loading.tsx", "loading.ts"]) ?? inheritedLoading;
+      inheritedError = findFile(errorParent, ["error.tsx", "error.ts"]) ?? inheritedError;
     }
     const apiFile = findFile(directory, ["route.ts", "route.tsx"]);
     const rootLayout = findFile(appDir, ["layout.tsx", "layout.ts"]);
@@ -97,7 +102,8 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
         path: segments.length ? "/" + segments.map(routeSegment).join("/") : "/",
         page: pageFile,
         layouts,
-        ...((loadingFile ?? inheritedLoading) ? { loading: loadingFile ?? inheritedLoading } : {})
+        ...((loadingFile ?? inheritedLoading) ? { loading: loadingFile ?? inheritedLoading } : {}),
+        ...(inheritedError ? { error: inheritedError } : {})
       });
     }
     if (apiFile && segments[0] === "api") {
@@ -139,6 +145,7 @@ export async function buildFullstackManifest(
     importFor(page.page);
     page.layouts.forEach(importFor);
     if (page.loading) importFor(page.loading);
+    if (page.error) importFor(page.error);
   }
   for (const route of discovered.api) importFor(route.file);
   if (discovered.notFound) importFor(discovered.notFound);
@@ -151,7 +158,8 @@ export async function buildFullstackManifest(
       const mod = importFor(page.page);
       const layouts = page.layouts.map((file) => `${importFor(file)}.default`);
       const loading = page.loading ? `${importFor(page.loading)}.default` : "undefined";
-      return `  { path: ${JSON.stringify(page.path)}, component: ${mod}.default, layouts: [${layouts.join(", ")}], loading: ${loading}, getServerSideProps: ${mod}.getServerSideProps, getStaticProps: ${mod}.getStaticProps, getStaticPaths: ${mod}.getStaticPaths },`;
+      const error = page.error ? `${importFor(page.error)}.default` : "undefined";
+      return `  { path: ${JSON.stringify(page.path)}, component: ${mod}.default, layouts: [${layouts.join(", ")}], loading: ${loading}, error: ${error}, getServerSideProps: ${mod}.getServerSideProps, getStaticProps: ${mod}.getStaticProps, getStaticPaths: ${mod}.getStaticPaths },`;
     }),
     "];",
     "export const apiRoutes = [",
@@ -244,14 +252,26 @@ export async function renderFullstackPage(
     routes: [{
       path: page.path,
       component: PageWithData,
-      layouts: page.layouts
+      layouts: page.layouts,
+      ...(page.error ? { error: page.error } : {})
     }],
     ...(manifest.notFound ? { notFound: manifest.notFound } : {}),
     initialPathname: options.request
       ? new URL(options.request.url).pathname + new URL(options.request.url).search
       : pathname
   });
-  return { html: renderToString(createElement(Router)), props, status: 200 };
+  try {
+    return { html: renderToString(createElement(Router)), props, status: 200 };
+  } catch (caught) {
+    const error = caught instanceof Error ? caught : new Error(String(caught));
+    const fallback = page.error
+      ? createElement(page.error, { error, reset: () => {}, params: matched.params, pathname: matched.pathname })
+      : createElement("main", { role: "alert" },
+          createElement("h1", null, "Something went wrong"),
+          createElement("p", null, "This page could not be rendered.")
+        );
+    return { html: renderToString(fallback), props: {}, status: 500 };
+  }
 }
 
 export async function getStaticRoutePaths(manifest: FullstackManifest): Promise<string[]> {
