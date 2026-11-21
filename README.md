@@ -4,9 +4,9 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 0.5.0 is an early runtime release. APIs may evolve before 1.0.
+> Javafy 0.6.0 is an early runtime release. APIs may evolve before 1.0.
 
-## 0.5.0 features
+## 0.6.0 features
 
 - TypeScript and TSX compilation powered by esbuild.
 - React 19 application runtime.
@@ -16,7 +16,8 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 - Server-side data loaders with `getServerSideProps`.
 - Static site generation (SSG) with `getStaticProps` and `getStaticPaths`.
 - Development server with React Fast Refresh, state-preserving HMR, browser error overlay, module graph inspection, and watched server route modules.
-- Production Node.js server for SSR and API routes.
+- Production Node.js server for SSR and API routes, with validated `HOST`/`PORT` overrides and clear startup errors.
+- Validated route patterns and configuration, including duplicate route parameter and catch-all checks.
 - Static assets and generated HTML in `dist/`.
 
 ## Requirements
@@ -174,7 +175,7 @@ Dynamic pages are prerendered for the parameter sets returned by `getStaticPaths
 
 Returned props are serialized into the HTML for hydration. Do not put secrets in page props.
 
-## Development runtime (0.5.0)
+## Development runtime (0.6.0)
 
 The development server transforms React components with the React Refresh Babel transform. When a module changes, Javafy rebuilds split ESM output and imports the updated application entry without reloading the document. React roots and unchanged vendor chunks are reused so compatible component state can survive edits.
 
@@ -241,7 +242,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.2.0 | Development Engine | TypeScript/TSX compiler, rebuild, live reload |
 | 0.3.0 | Routing | File-based routes, layouts, dynamic routes |
 | 0.4.0 | Fullstack Engine | API routes, SSR, SSG, server data loaders |
-| 0.5.0 | Runtime | React Fast Refresh, state-preserving HMR, error overlay, module graph |
+| 0.6.0 | Runtime | React Fast Refresh, state-preserving HMR, error overlay, module graph |
 | 1.0.0 | Production | Optimizer, caching, security, benchmarks |
 
 ## Performance
