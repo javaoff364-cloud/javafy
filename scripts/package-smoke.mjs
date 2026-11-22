@@ -66,7 +66,7 @@ try {
 
   // Install all workspace tarballs together in an isolated project. The root
   // CI install has already populated npm's cache for third-party dependencies.
-  run("npm", [
+  runNpm([
     "install", "--offline", "--no-audit", "--no-fund", "--no-save",
     "--package-lock=false", "--prefix", fixtureDir, ...tarballs
   ]);
@@ -80,7 +80,7 @@ try {
   ].join("\n");
   runNode(["--input-type=module", "-e", importCheck], fixtureDir);
 
-  const cliOutput = run(process.execPath, ["node_modules/@javafy/cli/dist/index.js", "--version"], { cwd: fixtureDir }).trim();
+  const cliOutput = runNode(["node_modules/@javafy/cli/dist/index.js", "--version"], fixtureDir).trim();
   assert.match(cliOutput, /^\d+\.\d+\.\d+$/);
   assert.equal(readdirSync(join(fixtureDir, "node_modules", "@javafy")).length, 4);
   console.log("Clean package installation and ESM imports passed.");
