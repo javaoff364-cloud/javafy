@@ -92,6 +92,9 @@ export function validateRouteDefinitions<T extends RouteDefinition>(routes: read
   }
 }
 
+type RankedRoute = { route: RouteDefinition; index: number; segments: string[] };
+const rankedRouteCache = new WeakMap<object, { fingerprint: string; ranked: RankedRoute[] }>();
+
 /** Match routes by segment specificity. Static segments outrank dynamic and catch-all segments. */
 export function matchRoute<T extends RouteDefinition>(
   pathname: string,
@@ -99,14 +102,21 @@ export function matchRoute<T extends RouteDefinition>(
 ): RouteMatch<T> | null {
   const current = normalizePathname(pathname);
   const currentSegments = current.split("/").filter(Boolean);
-  const ranked = routes
-    .filter((route) => isValidRoutePattern(route.path))
-    .map((route, index) => ({
-      route,
-      index,
-      segments: normalizePathname(route.path, true).split("/").filter(Boolean)
-    }))
-    .sort((a, b) => compareSpecificity(a.segments, b.segments) || a.index - b.index);
+  // Cache parsed and sorted route tables; fingerprinting keeps mutations safe.
+  const fingerprint = JSON.stringify(routes.map((route) => route.path));
+  const cached = rankedRouteCache.get(routes as object);
+  let ranked = cached?.fingerprint === fingerprint ? cached.ranked : undefined;
+  if (!ranked) {
+    ranked = routes
+      .filter((route) => isValidRoutePattern(route.path))
+      .map((route, index) => ({
+        route,
+        index,
+        segments: normalizePathname(route.path, true).split("/").filter(Boolean)
+      }))
+      .sort((a, b) => compareSpecificity(a.segments, b.segments) || a.index - b.index);
+    rankedRouteCache.set(routes as object, { fingerprint, ranked });
+  }
 
   for (const candidate of ranked) {
     const params: Record<string, string> = {};
@@ -136,7 +146,7 @@ export function matchRoute<T extends RouteDefinition>(
         params[name] = (decoded as string[]).join("/");
         // Catch-all segments are terminal, so they consume the remainder,
         // including zero segments when the catch-all is optional.
-        return { route: candidate.route, params, pathname: current };
+        return { route: candidate.route as T, params, pathname: current };
       }
 
       const actual = currentSegments[currentIndex];

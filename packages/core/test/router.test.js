@@ -109,3 +109,11 @@ test("validates route tables and rejects ambiguous definitions", async () => {
   assert.throws(() => validateRouteDefinitions([{ path: "/users/:id/:id" }]), /invalid route pattern/);
   assert.throws(() => validateRouteDefinitions([{ path: "/about" }, { path: "/about/" }]), /ambiguous route patterns/);
 });
+
+
+test("reuses route ranking and refreshes the cache after route table mutation", () => {
+  const routes = [{ path: "/items/:id" }];
+  assert.equal(matchRoute("/items/1", routes)?.route, routes[0]);
+  routes.unshift({ path: "/items/new" });
+  assert.equal(matchRoute("/items/new", routes)?.route, routes[0]);
+});
