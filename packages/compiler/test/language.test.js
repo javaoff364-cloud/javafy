@@ -17,7 +17,7 @@ const source = [
   "    }",
   "  }",
   "}"
-].join("\\n");
+].join("\n");
 
 test("tokenizes identifiers, strings, symbols and source locations", () => {
   const tokens = tokenize('page Home { title: "Hello" }', "home.jfy");
@@ -27,12 +27,12 @@ test("tokenizes identifiers, strings, symbols and source locations", () => {
   assert.equal(tokens.at(-1)?.kind, "eof");
 });
 test("skips line comments", () => {
-  const tokens = tokenize('// comment\\npage Home {}');
+  const tokens = tokenize('// comment\npage Home {}');
   assert.equal(tokens[0].value, "page");
   assert.equal(tokens[0].location.line, 2);
 });
 test("decodes supported string escapes", () => {
-  assert.equal(tokenize('"line\\\\nnext"')[0].value, "line\\nnext");
+  assert.equal(tokenize('"line\\nnext"')[0].value, "line\nnext");
 });
 test("parses nested elements, text, title and navigation actions", () => {
   const ast = parse(source, "src/routes/index.jfy");
@@ -60,7 +60,7 @@ test("rejects unknown render nodes", () => {
   assert.throws(() => parse('page Home { render { mystery "x" } }'), /Unknown render node/);
 });
 test("reports file, line and column for syntax errors", () => {
-  assert.throws(() => parse("page Home {\\n  render {\\n    text 42\\n  }\\n}", "broken.jfy"),
+  assert.throws(() => parse("page Home {\n  render {\n    text 42\n  }\n}", "broken.jfy"),
     (error) => error instanceof JavafySyntaxError && error.fileName === "broken.jfy" && error.line === 3 && error.column === 10);
 });
 test("rejects unterminated strings and unexpected characters", () => {
