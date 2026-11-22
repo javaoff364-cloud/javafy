@@ -170,7 +170,7 @@ export function matchRoute<T extends RouteDefinition>(
     }
 
     if (matched && currentIndex === currentSegments.length) {
-      return { route: candidate.route, params, pathname: current };
+      return { route: candidate.route as T, params, pathname: current };
     }
   }
   return null;
