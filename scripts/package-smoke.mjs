@@ -57,7 +57,7 @@ try {
     assert.ok(files.includes("README.md"), workspace + " does not include its npm README");
     assert.ok(!files.some((file) => /(^|\/)(test|tests|\.github)(\/|$)/.test(file)), workspace + " includes test or CI files");
     assert.ok(!files.some((file) => /\.map$|\.tsbuildinfo$/.test(file)), workspace + " includes build-only artifacts");
-    const expectedFilename = packageTarballNames[workspace] + "-1.0.0.tgz";
+    const expectedFilename = packageTarballNames[workspace] + "-1.0.1.tgz";
     assert.equal(packed[0].filename, expectedFilename, workspace + " produced an unexpected tarball name");
     // Build the path from a fixed workspace allowlist, never from subprocess output.
     const tarball = join(tarballDir, expectedFilename);

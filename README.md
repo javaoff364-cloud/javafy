@@ -4,7 +4,7 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 1.0.0 is published on npm. Install the CLI with `npm install -g @javafy/cli`, then scaffold an app with `javafy create <project-name>`.
+> Javafy 1.0.1 is published on npm. Install the CLI with `npm install -g @javafy/cli`, then scaffold an app with `javafy create <project-name>`.
 
 ## Features
 
@@ -347,7 +347,7 @@ The cache is per process, not distributed. Dynamic SSG supports pre-generated pa
 
 Performance is a core design goal. The 1.0.0 CI benchmark measures route matching, React SSR, and fullstack page rendering with warm-up, repeated samples, and Node/OS/CPU metadata. Reports are retained as workflow artifacts; comparisons should use equivalent environments.
 
-## Javafy 1.0.0 documentation
+## Javafy 1.0.1 documentation
 
 - [Complete public API reference](docs/API.md)
 - [Production deployment guide](docs/deployment.md)
