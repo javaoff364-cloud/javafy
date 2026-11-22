@@ -31,3 +31,9 @@ test("wraps multiple top-level nodes in a React fragment", () => {
 test("rejects invalid function names", () => {
   assert.throws(() => generate(parse("page Home { render {} }"), { functionName: "bad-name" }), /valid JavaScript identifier/);
 });
+
+test("generates valid calls for elements without children", () => {
+  const output = generate(parse('page Home { render { element img {} } }'));
+  assert.ok(output.includes('React.createElement("img", null)'));
+  assert.ok(!output.includes('null, )'));
+});
