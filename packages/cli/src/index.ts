@@ -151,7 +151,7 @@ export default function ErrorPage({ error, reset }: JavafyErrorProps) {
 }
 `,
     "src/lib/greeting.jf": "export function greet(name: string): string { return `Hello, ${name}!`; }\n",
-    "api/index.js": 'import handler from "@javafy/cli/dist/vercel.js";\\nexport default handler;\\n',
+    "api/index.js": 'import handler from "@javafy/cli/dist/vercel.js";\nexport default handler;\n',
     "vercel.json": JSON.stringify({ buildCommand: "npm run build", outputDirectory: "dist", rewrites: [{ source: "/(.*)", destination: "/api/index?__javafy_path=/$1" }], functions: { "api/index.js": { memory: 1024, maxDuration: 10 } } }, null, 2) + "\\n",
     "public/favicon.svg": `<svg xmlns="http://www.w3.org/2000/svg" width="272" height="272" viewBox="120 120 272 272"><rect x="310" y="126" width="76" height="76" rx="18" fill="#FF6B35"/><rect x="310" y="218" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="310" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="218" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="126" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="126" y="218" width="76" height="76" rx="18" fill="#0EA5A4"/></svg>
 `,
