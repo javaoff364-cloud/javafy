@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added `javafy create <project-name>` to scaffold a ready-to-run Javafy application without cloning the framework repository.
+- Added CLI tests for project creation, missing names, and refusing to overwrite non-empty directories.
+- Updated the npm quick start and CLI documentation to use the published packages.
+
+
 ## 1.0.0 — Production Readiness
 
 - Added dynamic SSG blocking fallback through `getStaticPaths` returning `{ paths, fallback: "blocking" }`; the default remains `false`.
