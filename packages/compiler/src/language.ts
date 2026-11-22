@@ -40,9 +40,9 @@ class Lexer {
     const tokens: Token[] = [];
     while (!this.isAtEnd()) {
       const char = this.peek();
-      if (/\\s/.test(char)) { this.advance(); continue; }
+      if (/\s/.test(char)) { this.advance(); continue; }
       if (char === "/" && this.peekNext() === "/") {
-        while (!this.isAtEnd() && this.peek() !== "\\n") this.advance();
+        while (!this.isAtEnd() && this.peek() !== "\n") this.advance();
         continue;
       }
       const location = this.location();
@@ -73,12 +73,12 @@ class Lexer {
     this.advance();
     let value = "";
     while (!this.isAtEnd() && this.peek() !== '"') {
-      if (this.peek() === "\\n") throw new JavafySyntaxError("String literals cannot contain an unescaped newline.", this.location());
-      if (this.peek() === "\\\\") {
+      if (this.peek() === "\n") throw new JavafySyntaxError("String literals cannot contain an unescaped newline.", this.location());
+      if (this.peek() === "\\") {
         this.advance();
         if (this.isAtEnd()) break;
         const escaped = this.advance();
-        const escapes: Record<string, string> = { n: "\\n", r: "\\r", t: "\\t", '"': '"', "\\\\": "\\\\" };
+        const escapes: Record<string, string> = { n: "\n", r: "\r", t: "\t", '"': '"', "\\": "\\" };
         if (!(escaped in escapes)) throw new JavafySyntaxError("Unsupported escape sequence: " + escaped + ".", this.location());
         value += escapes[escaped];
       } else value += this.advance();
@@ -89,12 +89,12 @@ class Lexer {
   }
 
   private location(): SourceLocation { return { fileName: this.fileName, offset: this.offset, line: this.line, column: this.column }; }
-  private peek(): string { return this.source[this.offset] ?? "\\0"; }
-  private peekNext(): string { return this.source[this.offset + 1] ?? "\\0"; }
+  private peek(): string { return this.source[this.offset] ?? "\0"; }
+  private peekNext(): string { return this.source[this.offset + 1] ?? "\0"; }
   private isAtEnd(): boolean { return this.offset >= this.source.length; }
   private advance(): string {
-    const char = this.source[this.offset++] ?? "\\0";
-    if (char === "\\n") { this.line++; this.column = 1; } else this.column++;
+    const char = this.source[this.offset++] ?? "\0";
+    if (char === "\n") { this.line++; this.column = 1; } else this.column++;
     return char;
   }
 }
