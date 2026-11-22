@@ -1,4 +1,4 @@
-import type { JavafyErrorProps } from "@javafy/router";
+import type { JavafyErrorProps } from "javafy/router";
 
 export default function ErrorPage({ error, reset }: JavafyErrorProps) {
   return (

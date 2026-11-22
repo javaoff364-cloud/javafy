@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link } from "@javafy/router";
+import { Link } from "javafy/router";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

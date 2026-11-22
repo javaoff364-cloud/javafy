@@ -1,4 +1,4 @@
-# Javafy 1.0.0 API Reference
+# Javafy 1.0.2 API Reference
 
 This reference describes the public API implemented by the 1.0.0 candidate. Javafy targets Node.js 20+ and ESM. React 19 is the UI runtime.
 
@@ -63,8 +63,8 @@ A default export from `src/app/middleware.ts` receives `(request, next)`. It can
 
 ## Server exports
 
-`@javafy/server` exports `createApiRouter`, `createMiddlewareHandler`, and the `ApiMethod`, `ApiRouteContext`, `ApiRouteHandler`, `ApiRouteDefinition`, `MiddlewareNext`, and `JavafyMiddleware` types.
+`javafy/server` exports `createApiRouter`, `createMiddlewareHandler`, and the `ApiMethod`, `ApiRouteContext`, `ApiRouteHandler`, `ApiRouteDefinition`, `MiddlewareNext`, and `JavafyMiddleware` types.
 
-`@javafy/core` exports `defineConfig`, `resolveConfig`, `defaultConfig`, `JAVAFY_VERSION`, route matching/validation helpers, and route types.
+`javafy` exports `defineConfig`, `resolveConfig`, `defaultConfig`, `JAVAFY_VERSION`, route matching/validation helpers, and route types.
 
-`@javafy/router` exports `createRouter`, `navigate`, `Link`, `useRouter`, and router prop/value types.
+`javafy/router` exports `createRouter`, `navigate`, `Link`, `useRouter`, and router prop/value types.

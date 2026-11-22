@@ -35,14 +35,14 @@ test("javafy create scaffolds a runnable project", () => {
     assert.ok(readFileSync(join(project, "src/app/404.jf"), "utf8").includes("Page not found"));
     assert.ok(readFileSync(join(project, "src/app/error.jfx"), "utf8").includes("Try again"));
     assert.ok(readFileSync(join(project, "src/app/loading.jfx"), "utf8").includes("Loading page..."));
-    assert.ok(readFileSync(join(project, "public/favicon.svg"), "utf8").includes("#FF6B35"));
+    assert.ok(readFileSync(join(project, "public/favicon.svg"), "utf8").includes("#FF8A4C"));
     assert.ok(readFileSync(join(project, "public/styles.css"), "utf8").includes("prefers-reduced-motion"));
     assert.ok(readFileSync(join(project, "src/app/layout.jfx"), "utf8").includes("RootLayout"));
     assert.ok(readFileSync(join(project, "index.html"), "utf8").includes('id="root"'));
     assert.ok(readFileSync(join(project, "index.html"), "utf8").includes('href="/styles.css"'));
     assert.ok(readFileSync(join(project, "javafy.config.js"), "utf8").includes('name: "my-app"'));
     assert.ok(readFileSync(join(project, "src/lib/greeting.jf"), "utf8").includes("function greet"));
-    assert.ok(readFileSync(join(project, "api/index.js"), "utf8").includes("vercel.js"));
+    assert.ok(readFileSync(join(project, "api/index.js"), "utf8").includes("javafy/vercel"));
     assert.ok(readFileSync(join(project, "vercel.json"), "utf8").includes("outputDirectory"));
   } finally {
     rmSync(workspace, { recursive: true, force: true });

@@ -386,6 +386,7 @@ test("discovers and compiles Javafy-native page, component, and API extensions",
   mkdirSync(join(root, "src", "components"), { recursive: true });
   writeFileSync(join(root, "src", "components", "Heading.jfc"), 'export default function Heading({ children }) { return <h1>{children}</h1>; }');
   writeFileSync(join(app, "layout.jfc"), 'export default function Layout({ children }) { return <div className="layout">{children}</div>; }');
+  writeFileSync(join(app, "404.jf"), 'import { createElement } from "react"; export default function NotFound() { return createElement("h1", null, "Javafy 404"); }');
   writeFileSync(join(app, "page.jfx"), 'import Heading from "../components/Heading.jfc"; export default function Home() { return <Heading>Native Javafy page</Heading>; }');
   writeFileSync(join(app, "about", "page.jfx"), 'export default function About() { return <p>About native</p>; }');
   writeFileSync(join(app, "api", "hello", "route.jfa"), 'export function GET() { return Response.json({ message: "native api" }); }');
@@ -393,12 +394,16 @@ test("discovers and compiles Javafy-native page, component, and API extensions",
     const found = discoverFullstackFiles(app);
     assert.deepEqual(found.pages.map((page) => page.path), ["/", "/about"]);
     assert.ok(found.pages[0].page.endsWith("page.jfx"));
+    assert.ok(found.notFound?.endsWith("404.jf"));
     assert.ok(found.pages[0].layouts[0].endsWith("layout.jfc"));
     assert.ok(found.api[0].file.endsWith("route.jfa"));
     const manifestFile = join(root, "manifest.mjs");
     await buildFullstackManifest(root, app, manifestFile);
     const manifest = await loadFullstackManifest(manifestFile);
     const rendered = await renderFullstackPage(manifest, "/");
+    const missing = await renderFullstackPage(manifest, "/missing");
+    assert.equal(missing.status, 404);
+    assert.match(missing.html, /Javafy 404/);
     assert.match(rendered.html, /Native Javafy page/);
     assert.match(rendered.html, /class="layout"/);
     const { createApiRouter } = await import("@javafy/server");
