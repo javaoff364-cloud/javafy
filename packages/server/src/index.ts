@@ -1,5 +1,5 @@
 /** Javafy server runtime primitives. */
-import { matchRoute, type RouteDefinition } from "@javafy/core";
+import { matchRoute, validateRouteDefinitions, type RouteDefinition } from "@javafy/core";
 
 export type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
 export interface ApiRouteContext {
@@ -31,6 +31,7 @@ export function createApiRouter(
   routes: readonly ApiRouteDefinition[],
   middleware: readonly JavafyMiddleware[] = []
 ) {
+  validateRouteDefinitions(routes);
   const handleApiRequest = async function handleApiRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const match = matchRoute(url.pathname, routes);
@@ -72,7 +73,13 @@ export function createApiRouter(
       }
       return response;
     } catch (error) {
-      // Never expose exception messages or stack details to API clients.
+      // Malformed JSON is a client input error; all other exceptions stay private.
+      if (error instanceof SyntaxError) {
+        return Response.json(
+          { error: "Bad Request", message: "The request body contains invalid JSON." },
+          { status: 400 }
+        );
+      }
       return Response.json(
         { error: "Internal Server Error", message: "An unexpected error occurred." },
         { status: 500 }

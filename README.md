@@ -4,7 +4,7 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 0.9.0 is the current stable release.
+> Javafy 1.0.0 is the production-readiness candidate on `feat/1.0.0`; 0.9.0 remains the latest published stable release.
 
 ## Features
 
@@ -15,7 +15,7 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 - File-based request middleware for API, SSR, and client-navigation data requests, with ordered execution, short-circuit responses, and request replacement.
 - Server-side rendering (SSR) for page requests.
 - Server-side data loaders with `getServerSideProps`, opt-in `revalidate` caching, and explicit `getCacheKey` isolation.
-- Static site generation (SSG) with `getStaticProps` and `getStaticPaths`.
+- Static site generation (SSG) with `getStaticProps`, `getStaticPaths`, and explicit `fallback: false` / `fallback: "blocking"` modes.
 - Development server with React Fast Refresh, state-preserving HMR, browser error overlay, module graph inspection, and watched server route modules.
 - Production Node.js server for SSR and API routes, with validated `HOST`/`PORT` overrides, clear startup errors, and route-aware runtime diagnostics.
 - Validated route patterns and configuration, including duplicate route parameter and catch-all checks.
@@ -360,11 +360,17 @@ Javafy 0.9.0 adds reliability-focused routing and data primitives:
 - **Cache and revalidation:** opt-in `revalidate` seconds plus a required `getCacheKey` function; successful loader results are stored in a bounded per-process cache. No implicit caching is performed.
 - **Runtime diagnostics:** route-aware loader and cache-key failures are logged with a `[Javafy diagnostics]` prefix.
 
-The cache is per process, not distributed. Streaming SSR and `getStaticPaths` fallback modes remain outside this release.
+The cache is per process, not distributed. Dynamic SSG supports pre-generated paths and blocking server fallback; streaming SSR, edge/serverless runtime compatibility, database integrations, and built-in authentication are not included.
 
 ## Performance
 
-Performance is a core design goal. We will publish reproducible benchmarks for cold start, build time, hot updates, memory use, and server response time before making speed comparisons with other frameworks.
+Performance is a core design goal. The 1.0.0 CI benchmark measures route matching, React SSR, and fullstack page rendering with warm-up, repeated samples, and Node/OS/CPU metadata. Reports are retained as workflow artifacts; comparisons should use equivalent environments.
+
+## 1.0.0 candidate documentation
+
+- [Complete public API reference](docs/API.md)
+- [Production deployment guide](docs/deployment.md)
+- [1.0.0 production-readiness acceptance plan](docs/1.0.0-roadmap.md)
 
 ## Contributing
 

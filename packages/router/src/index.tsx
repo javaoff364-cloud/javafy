@@ -14,7 +14,7 @@ import {
   type MouseEvent,
   type ReactNode
 } from "react";
-import { matchRoute, type RouteDefinition } from "@javafy/core";
+import { matchRoute, validateRouteDefinitions, type RouteDefinition } from "@javafy/core";
 
 export interface JavafyPageProps {
   params: Record<string, string>;
@@ -191,6 +191,7 @@ export function createRouter(options: {
   initialPathname?: string;
   loadData?: (url: URL, signal?: AbortSignal) => Promise<JavafyNavigationData>;
 }): ComponentType {
+  validateRouteDefinitions(options.routes);
   const Router = function JavafyRouter() {
     const [location, setLocation] = useState<LocationSnapshot>(() =>
       options.initialPathname

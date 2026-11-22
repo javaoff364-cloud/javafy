@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createElement, type ComponentType } from "react";
@@ -15,6 +16,8 @@ type DataContext = {
   searchParams?: URLSearchParams;
 };
 
+type StaticPathEntry = { params: Record<string, string> };
+type StaticPathsResult = StaticPathEntry[] | { paths: StaticPathEntry[]; fallback?: false | "blocking" };
 type DataResult = Record<string, unknown> | void | null;
 type DataLoader = (context: DataContext) => DataResult | Promise<DataResult>;
 
@@ -22,7 +25,7 @@ type PageModule = {
   default: ComponentType<JavafyPageProps>;
   getServerSideProps?: DataLoader;
   getStaticProps?: DataLoader;
-  getStaticPaths?: () => Array<{ params: Record<string, string> }> | Promise<Array<{ params: Record<string, string> }>>;
+  getStaticPaths?: () => StaticPathsResult | Promise<StaticPathsResult>;
   revalidate?: number;
   getCacheKey?: (context: DataContext) => string;
 };
@@ -227,7 +230,9 @@ export async function renderFullstackPage(
   }
   const page = matched.route;
   if (isDynamicRoute(page.path) && page.getStaticPaths && !page.getServerSideProps) {
-    const staticEntries = await page.getStaticPaths();
+    const staticResult = await page.getStaticPaths();
+    const staticEntries = Array.isArray(staticResult) ? staticResult : staticResult.paths;
+    const fallbackMode = Array.isArray(staticResult) ? false : staticResult.fallback ?? false;
     const routeParams = [...page.path.matchAll(/([:*])([^/?]+)(\?)?/g)];
     const requiredParams = routeParams.filter((match) => match[3] !== "?").map((match) => match[2] ?? "");
     const allowedParams = routeParams.map((match) => match[2] ?? "");
@@ -239,7 +244,7 @@ export async function renderFullstackPage(
       ) &&
       optionalParams.every((key) => entry.params[key] !== undefined || matched.params[key] === "")
     );
-    if (!allowed) {
+    if (!allowed && fallbackMode !== "blocking") {
       const notFound = manifest.notFound
         ? createElement(manifest.notFound, { params: matched.params, pathname: matched.pathname })
         : createElement("main", null, createElement("h1", null, "404 — Page not found"));
@@ -261,7 +266,13 @@ export async function renderFullstackPage(
   if (cacheSeconds > 0 && page.getCacheKey) {
     try {
       const customKey = page.getCacheKey(context);
-      if (typeof customKey === "string" && customKey.trim()) cacheKey = page.path + ":" + JSON.stringify(matched.params) + ":" + customKey;
+      if (typeof customKey === "string" && customKey.trim()) {
+        const identity = options.request
+          ? [options.request.headers.get("authorization") ?? "", options.request.headers.get("cookie") ?? ""].join("\\n")
+          : "public";
+        const scope = createHash("sha256").update(identity).digest("hex");
+        cacheKey = page.path + ":" + JSON.stringify(matched.params) + ":" + customKey + ":" + scope;
+      }
     } catch (error) {
       console.error("[Javafy diagnostics] getCacheKey failed for " + page.path, error);
     }
@@ -331,7 +342,8 @@ export async function getStaticRoutePaths(manifest: FullstackManifest): Promise<
       continue;
     }
     if (page.getServerSideProps || !page.getStaticPaths) continue;
-    const entries = await page.getStaticPaths();
+    const result = await page.getStaticPaths();
+    const entries = Array.isArray(result) ? result : result.paths;
     const tokens = [...page.path.matchAll(/([:*])([^/?]+)(\?)?/g)];
     for (const entry of entries) {
       let pathname = page.path;

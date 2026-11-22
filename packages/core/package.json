@@ -1,6 +1,6 @@
 {
   "name": "@javafy/core",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "Core types and utilities for Javafy.",
   "license": "MIT",
   "type": "module",
@@ -13,7 +13,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.tsbuildinfo",
+    "!dist/**/*.map"
   ],
   "scripts": {
     "build": "tsc -b"

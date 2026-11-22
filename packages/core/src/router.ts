@@ -68,6 +68,33 @@ export function isValidRoutePattern(pattern: string): boolean {
   return true;
 }
 
+/** Validate a route table and reject duplicate or ambiguous patterns early. */
+export function validateRouteDefinitions<T extends RouteDefinition>(routes: readonly T[]): void {
+  const seen = new Map<string, string>();
+  for (const route of routes) {
+    if (!route || typeof route.path !== "string" || route.path.trim() === "") {
+      throw new Error("Javafy routes: every route must have a non-empty path.");
+    }
+    if (!isValidRoutePattern(route.path)) {
+      throw new Error("Javafy routes: invalid route pattern: " + route.path);
+    }
+    const normalized = normalizePathname(route.path, true);
+    const signature = normalized.split("/").map((segment) => {
+      if (segment.startsWith(":")) return ":";
+      if (segment.startsWith("*")) return segment.endsWith("?") ? "*?" : "*";
+      return segment;
+    }).join("/");
+    const previous = seen.get(signature);
+    if (previous) {
+      throw new Error("Javafy routes: ambiguous route patterns: " + previous + " and " + route.path);
+    }
+    seen.set(signature, route.path);
+  }
+}
+
+type RankedRoute = { route: RouteDefinition; index: number; segments: string[] };
+const rankedRouteCache = new WeakMap<object, { fingerprint: string; ranked: RankedRoute[] }>();
+
 /** Match routes by segment specificity. Static segments outrank dynamic and catch-all segments. */
 export function matchRoute<T extends RouteDefinition>(
   pathname: string,
@@ -75,14 +102,21 @@ export function matchRoute<T extends RouteDefinition>(
 ): RouteMatch<T> | null {
   const current = normalizePathname(pathname);
   const currentSegments = current.split("/").filter(Boolean);
-  const ranked = routes
-    .filter((route) => isValidRoutePattern(route.path))
-    .map((route, index) => ({
-      route,
-      index,
-      segments: normalizePathname(route.path, true).split("/").filter(Boolean)
-    }))
-    .sort((a, b) => compareSpecificity(a.segments, b.segments) || a.index - b.index);
+  // Cache parsed and sorted route tables; fingerprinting keeps mutations safe.
+  const fingerprint = JSON.stringify(routes.map((route) => route.path));
+  const cached = rankedRouteCache.get(routes as object);
+  let ranked = cached?.fingerprint === fingerprint ? cached.ranked : undefined;
+  if (!ranked) {
+    ranked = routes
+      .filter((route) => isValidRoutePattern(route.path))
+      .map((route, index) => ({
+        route,
+        index,
+        segments: normalizePathname(route.path, true).split("/").filter(Boolean)
+      }))
+      .sort((a, b) => compareSpecificity(a.segments, b.segments) || a.index - b.index);
+    rankedRouteCache.set(routes as object, { fingerprint, ranked });
+  }
 
   for (const candidate of ranked) {
     const params: Record<string, string> = {};
@@ -112,7 +146,7 @@ export function matchRoute<T extends RouteDefinition>(
         params[name] = (decoded as string[]).join("/");
         // Catch-all segments are terminal, so they consume the remainder,
         // including zero segments when the catch-all is optional.
-        return { route: candidate.route, params, pathname: current };
+        return { route: candidate.route as T, params, pathname: current };
       }
 
       const actual = currentSegments[currentIndex];
@@ -136,7 +170,7 @@ export function matchRoute<T extends RouteDefinition>(
     }
 
     if (matched && currentIndex === currentSegments.length) {
-      return { route: candidate.route, params, pathname: current };
+      return { route: candidate.route as T, params, pathname: current };
     }
   }
   return null;

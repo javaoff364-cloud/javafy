@@ -99,3 +99,41 @@ test("runs middleware before API route handlers", async () => {
   assert.equal(response.headers.get("x-middleware-ran"), "true");
   assert.deepEqual(await response.json(), { middleware: "active" });
 });
+
+
+test("returns 400 for malformed JSON without exposing parser internals", async () => {
+  const response = await router(new Request("http://localhost/api/users/7", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: "{invalid json"
+  }));
+  assert.equal(response.status, 400);
+  const payload = await response.json();
+  assert.deepEqual(payload, {
+    error: "Bad Request",
+    message: "The request body contains invalid JSON."
+  });
+});
+
+test("returns 400 for a handler that explicitly rejects invalid request input", async () => {
+  const validated = createApiRouter([{
+    path: "/api/validated",
+    POST: async (request) => {
+      const body = await request.json();
+      if (!body || typeof body.name !== "string" || body.name.trim() === "") {
+        return Response.json({ error: "Validation Error", message: "name is required." }, { status: 400 });
+      }
+      return Response.json({ name: body.name.trim() });
+    }
+  }]);
+  const response = await validated(new Request("http://localhost/api/validated", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: " " })
+  }));
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), {
+    error: "Validation Error",
+    message: "name is required."
+  });
+});
