@@ -7,7 +7,7 @@ The supported production target is a long-running Node.js server on Node.js 20 o
 ## Build and start
 
 ```sh
-npm ci
+npm install
 npm run build
 npm run build:example
 cd examples/hello-world
