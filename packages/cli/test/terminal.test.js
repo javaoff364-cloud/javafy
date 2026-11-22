@@ -34,7 +34,7 @@ test("terminal formatter supports rich output and structured helpers", () => {
   for (const expected of ["Javafy", "Environment", "ready", "Runtime", "web", "75%", "[PASS]", "documentation", "red"]) {
     assert.ok(result.stdout.includes(expected), "missing output: " + expected);
   }
-  assert.ok(!result.stdout.includes("\\u001b["));
+  assert.ok(!result.stdout.includes(String.fromCharCode(27) + "["));
 });
 
 test("NO_COLOR disables ANSI styling and FORCE_COLOR enables it in non-TTY output", () => {
@@ -44,11 +44,11 @@ test("NO_COLOR disables ANSI styling and FORCE_COLOR enables it in non-TTY outpu
   `;
   const plain = run(source, { NO_COLOR: "1", FORCE_COLOR: "1", TERM: "xterm-256color" });
   assert.equal(plain.status, 0, plain.stderr);
-  assert.ok(!plain.stdout.includes("\\u001b["));
+  assert.ok(!plain.stdout.includes(String.fromCharCode(27) + "["));
 
   const colored = run(source, { NO_COLOR: undefined, FORCE_COLOR: "1", TERM: "dumb" });
   assert.equal(colored.status, 0, colored.stderr);
-  assert.ok(colored.stdout.includes("\\u001b["));
+  assert.ok(colored.stdout.includes(String.fromCharCode(27) + "["));
 });
 
 test("terminal progress handles empty totals safely", () => {
