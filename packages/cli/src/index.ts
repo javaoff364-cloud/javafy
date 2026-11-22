@@ -14,6 +14,7 @@ import {
 } from "esbuild";
 import { resolveConfig, JAVAFY_VERSION, type JavafyConfig } from "@javafy/core";
 import { terminal } from "./terminal.js";
+import { createJavafySourcePlugin, JAVAFY_RESOLVE_EXTENSIONS } from "./native-files.js";
 import { createDevClientScript, createModuleGraph, serializeBuildErrors, createFastRefreshPlugin, createReactDomClientPlugin, resolveServerOptions, listenServer, FAST_REFRESH_PREAMBLE, FAST_REFRESH_FOOTER } from "./runtime.js";
 
 const command = process.argv[2] ?? "dev";
@@ -34,9 +35,9 @@ Commands:
   --help    Show this help message
 
 Routing:
-  src/app/page.tsx             /
-  src/app/about/page.tsx       /about
-  src/app/blog/[id]/page.tsx   /blog/:id
+  src/app/page.jfx             /
+  src/app/about/page.jfx       /about
+  src/app/blog/[id]/page.jfx   /blog/:id
   src/app/layout.tsx           Shared layout
 `);
 }
@@ -110,15 +111,15 @@ function createProject(input?: string): void {
         skipLibCheck: true,
         noEmit: true
       },
-      include: ["src/**/*.tsx", "src/**/*.ts"]
+      include: ["src/**/*.tsx", "src/**/*.ts", "src/**/*.jfx", "src/**/*.jf", "src/**/*.jfc", "src/**/*.jfy", "src/**/*.jfs", "src/**/*.jfa"]
     }, null, 2) + "\n",
-    "src/app/layout.tsx": `import type { ReactNode } from "react";
+    "src/app/layout.jfx": `import type { ReactNode } from "react";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 `,
-    "src/app/page.tsx": `export default function HomePage() {
+    "src/app/page.jfx": `export default function HomePage() {
   return (
     <>
       <header><a className="brand" href="/"><i className="logo" />Javafy</a><nav><a href="/" aria-current="page">Home</a><a href="/about">About</a><a href="/blog/hello">Dynamic route</a></nav></header>
@@ -128,27 +129,30 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   );
 }
 `,
-    "src/app/about/page.tsx": `export default function AboutPage() {
+    "src/app/about/page.jfx": `export default function AboutPage() {
   return <><header><a className="brand" href="/"><i className="logo" />Javafy</a><nav><a href="/">Home</a><a href="/about" aria-current="page">About</a></nav></header><main className="page"><p className="eyebrow">Framework</p><h1 className="heading">Build faster. Run smarter.</h1><p className="lead">Javafy gives you a clean foundation for modern React applications.</p><div className="card"><strong>TypeScript + React</strong><p>File-based routing, server rendering, static generation, API routes and fast refresh.</p></div><div className="actions"><a className="btn" href="/">Back home</a></div></main><footer><span>Build faster. Run smarter.</span><span>Javafy ${JAVAFY_VERSION}</span></footer></>;
 }
 `,
-    "src/app/blog/[id]/page.tsx": `export default function BlogPage({ params }: { params: Record<string, string> }) {
+    "src/app/blog/[id]/page.jfx": `export default function BlogPage({ params }: { params: Record<string, string> }) {
   return <><header><a className="brand" href="/"><i className="logo" />Javafy</a></header><main className="page"><p className="eyebrow">Dynamic route demo</p><h1 className="heading">Hello, {params.id}!</h1><p className="lead">This route was rendered from the dynamic segment <code>[id]</code>.</p><div className="card"><strong>Route parameter</strong><p><code>{params.id}</code></p></div><div className="actions"><a className="btn" href="/">Back home</a></div></main><footer><span>Build faster. Run smarter.</span><span>Javafy ${JAVAFY_VERSION}</span></footer></>;
 }
 `,
-    "src/app/not-found.tsx": `export default function NotFound() {
+    "src/app/not-found.jfx": `export default function NotFound() {
   return <><header><a className="brand" href="/"><i className="logo" />Javafy</a></header><main className="center"><div className="code" aria-label="404"><span>4</span><svg className="snake" viewBox="0 0 100 140" aria-hidden="true"><path className="track" d="M15 50 A35 35 0 0 1 85 50 L85 90 A35 35 0 0 1 15 90 Z"/><circle className="food" cx="50" cy="70" r="4.5"/><path className="sbody" d="M15 50 A35 35 0 0 1 85 50 L85 90 A35 35 0 0 1 15 90 Z"/><path className="shead" d="M15 50 A35 35 0 0 1 85 50 L85 90 A35 35 0 0 1 15 90 Z"/></svg><span>4</span></div><h1 className="heading">Page not found</h1><p className="lead">This route does not exist in your Javafy app.</p><div className="actions"><a className="btn" href="/">Return home</a></div></main><footer><span>Build faster. Run smarter.</span><span>Javafy ${JAVAFY_VERSION}</span></footer></>;
 }
 `,
-    "src/app/error.tsx": `import type { JavafyErrorProps } from "@javafy/router";
+    "src/app/error.jfx": `import type { JavafyErrorProps } from "@javafy/router";
 export default function ErrorPage({ error, reset }: JavafyErrorProps) {
   return <><header><a className="brand" href="/"><i className="logo" />Javafy</a></header><main className="center" role="alert"><p className="eyebrow danger">Javafy error</p><h1 className="heading">Something went wrong.</h1><p className="lead">This page could not be rendered.</p><pre className="errorbox">{error.message}</pre><div className="actions"><button className="btn" onClick={reset}>Try again</button><a className="btn ghost" href="/">Go home</a></div></main><footer><span>Build faster. Run smarter.</span><span>Javafy ${JAVAFY_VERSION}</span></footer></>;
 }
 `,
-    "src/app/loading.tsx": `export default function Loading() {
+    "src/app/loading.jfx": `export default function Loading() {
   return <main className="center" role="status" aria-live="polite"><div className="progress"/><svg className="loader" viewBox="120 120 272 272" aria-hidden="true"><rect x="310" y="126" width="76" height="76" rx="18" fill="#FF6B35"/><rect x="310" y="218" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="310" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="218" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="126" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="126" y="218" width="76" height="76" rx="18" fill="#0EA5A4"/></svg><p className="eyebrow">Javafy navigation</p><h1 className="heading">Loading page...</h1><p className="lead">Loading route content.</p><div className="skeletons"><span className="skeleton"/><span className="skeleton short"/><span className="skeleton shorter"/></div></main>;
 }
 `,
+    "src/lib/greeting.jf": "export function greet(name: string): string { return `Hello, ${name}!`; }\\n",
+    "api/index.js": 'import handler from "@javafy/cli/dist/vercel.js";\\nexport default handler;\\n',
+    "vercel.json": JSON.stringify({ buildCommand: "npm run build", outputDirectory: "dist", rewrites: [{ source: "/(.*)", destination: "/api/index?__javafy_path=/$1" }], functions: { "api/index.js": { memory: 1024, maxDuration: 10 } } }, null, 2) + "\\n",
     "public/favicon.svg": `<svg xmlns="http://www.w3.org/2000/svg" width="272" height="272" viewBox="120 120 272 272"><rect x="310" y="126" width="76" height="76" rx="18" fill="#FF6B35"/><rect x="310" y="218" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="310" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="218" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="126" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="126" y="218" width="76" height="76" rx="18" fill="#0EA5A4"/></svg>
 `,
     "public/styles.css": `:root{--bg:#101827;--surface:#162033;--border:#263449;--fg:#f8fafc;--muted:#a8b4c7;--teal:#0EA5A4;--orange:#FF6B35;--btn-bg:#0EA5A4;--btn-fg:#04201f;--danger:#fca5a5}
@@ -217,23 +221,22 @@ function discoverRoutes(appDir: string): {
 } {
   const routes: DiscoveredRoute[] = [];
   const watchDirs: string[] = [];
-  const notFoundPath = [join(appDir, "not-found.tsx"), join(appDir, "not-found.ts")]
-    .find(existsSync);
+  const notFoundPath = ["not-found.jfx", "not-found.jfy", "not-found.tsx", "not-found.jf", "not-found.ts"].map((name) => join(appDir, name)).find(existsSync);
   const layoutFile = (directory: string) =>
-    [join(directory, "layout.tsx"), join(directory, "layout.ts")].find(existsSync);
+    ["layout.jfx", "layout.jfc", "layout.jfy", "layout.tsx", "layout.jf", "layout.ts"].map((name) => join(directory, name)).find(existsSync);
 
   function walk(directory: string, segments: string[]): void {
     watchDirs.push(directory);
     const entries = readdirSync(directory, { withFileTypes: true });
     const page = entries
-      .filter((entry) => entry.isFile() && (entry.name === "page.tsx" || entry.name === "page.ts"))
+      .filter((entry) => entry.isFile() && ["page.jfx", "page.jfy", "page.tsx", "page.jf", "page.ts"].includes(entry.name))
       .map((entry) => join(directory, entry.name))[0];
-    const localLoading = [join(directory, "loading.tsx"), join(directory, "loading.ts")].find(existsSync);
-    let inheritedLoading = [join(appDir, "loading.tsx"), join(appDir, "loading.ts")].find(existsSync);
+    const localLoading = ["loading.jfx", "loading.jfy", "loading.tsx", "loading.jf", "loading.ts"].map((name) => join(directory, name)).find(existsSync);
+    let inheritedLoading = ["loading.jfx", "loading.jfy", "loading.tsx", "loading.jf", "loading.ts"].map((name) => join(appDir, name)).find(existsSync);
     let loadingParent = appDir;
     for (const segment of segments) {
       loadingParent = join(loadingParent, segment);
-      inheritedLoading = [join(loadingParent, "loading.tsx"), join(loadingParent, "loading.ts")].find(existsSync) ?? inheritedLoading;
+      inheritedLoading = ["loading.jfx", "loading.jfy", "loading.tsx", "loading.jf", "loading.ts"].map((name) => join(loadingParent, name)).find(existsSync) ?? inheritedLoading;
     }
 
     if (page) {
@@ -341,10 +344,10 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
 
 function entryOptions(root: string, appDir: string) {
   const usesRouter = hasRoutePages(appDir);
-  const entry = resolve(root, "src/main.tsx");
+  const entry = ["main.jfx", "main.tsx", "main.jf", "main.ts"].map((name) => resolve(root, "src", name)).find(existsSync) ?? resolve(root, "src/main.jfx");
   return {
     entryPoints: [usesRouter ? "javafy:router-entry" : entry],
-    plugins: usesRouter ? [createRouterPlugin(root, appDir)] : [],
+    plugins: [createJavafySourcePlugin(), ...(usesRouter ? [createRouterPlugin(root, appDir)] : [])],
     usesRouter,
     entry
   };
@@ -474,7 +477,7 @@ async function dev(): Promise<void> {
   });
 
   if (!entryConfig.usesRouter && !existsSync(entryConfig.entry)) {
-    terminal.error("src/main.tsx or a page in src/app/ was not found.");
+    terminal.error("src/main.jfx/.tsx/.jf/.ts or a page in src/app/ was not found.");
     process.exitCode = 1;
     return;
   }
@@ -534,6 +537,7 @@ async function dev(): Promise<void> {
     target: ["es2022"],
     sourcemap: "inline",
     jsx: "automatic",
+    resolveExtensions: JAVAFY_RESOLVE_EXTENSIONS,
     logLevel: "silent",
     metafile: true
   });
@@ -739,7 +743,7 @@ async function dev(): Promise<void> {
   terminal.section("Development");
   terminal.url("Local", "http://" + serverOptions.host + ":" + serverOptions.port);
   terminal.keyValue("File routing", terminal.enabled(entryConfig.usesRouter));
-  terminal.keyValue("TSX compiler", terminal.enabled(true));
+  terminal.keyValue("Javafy + TSX compiler", terminal.enabled(true));
   terminal.keyValue("Live reload", terminal.enabled(true));
 
   const shutdown = async () => {
@@ -778,6 +782,7 @@ async function build(): Promise<void> {
     absWorkingDir: root,
     entryPoints: entryConfig.entryPoints,
     plugins: entryConfig.plugins,
+    resolveExtensions: JAVAFY_RESOLVE_EXTENSIONS,
     bundle: true,
     outdir: join(output, "assets"),
     entryNames: "app",

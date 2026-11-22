@@ -9,6 +9,7 @@ import { matchRoute, type RouteDefinition } from "@javafy/core";
 import type { ApiRouteDefinition, JavafyMiddleware } from "@javafy/server";
 import { terminal } from "./terminal.js";
 import { build } from "esbuild";
+import { createJavafySourcePlugin, JAVAFY_RESOLVE_EXTENSIONS } from "./native-files.js";
 
 type DataContext = {
   params: Record<string, string>;
@@ -91,27 +92,27 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
     if (!existsSync(directory) || !statSync(directory).isDirectory()) return;
     watchDirs.push(directory);
     const entries = readdirSync(directory, { withFileTypes: true });
-    const pageFile = findFile(directory, ["page.tsx", "page.ts"]);
-    const loadingFile = findFile(directory, ["loading.tsx", "loading.ts"]);
-    let inheritedLoading = findFile(appDir, ["loading.tsx", "loading.ts"]);
-    let inheritedError = findFile(appDir, ["error.tsx", "error.ts"]);
+    const pageFile = findFile(directory, ["page.jfx", "page.jfy", "page.tsx", "page.jf", "page.ts"]);
+    const loadingFile = findFile(directory, ["loading.jfx", "loading.jfy", "loading.tsx", "loading.jf", "loading.ts"]);
+    let inheritedLoading = findFile(appDir, ["loading.jfx", "loading.jfy", "loading.tsx", "loading.jf", "loading.ts"]);
+    let inheritedError = findFile(appDir, ["error.jfx", "error.jfy", "error.tsx", "error.jf", "error.ts"]);
     let loadingParent = appDir;
     let errorParent = appDir;
     for (const segment of segments) {
       loadingParent = resolve(loadingParent, segment);
       errorParent = resolve(errorParent, segment);
-      inheritedLoading = findFile(loadingParent, ["loading.tsx", "loading.ts"]) ?? inheritedLoading;
-      inheritedError = findFile(errorParent, ["error.tsx", "error.ts"]) ?? inheritedError;
+      inheritedLoading = findFile(loadingParent, ["loading.jfx", "loading.jfy", "loading.tsx", "loading.jf", "loading.ts"]) ?? inheritedLoading;
+      inheritedError = findFile(errorParent, ["error.jfx", "error.jfy", "error.tsx", "error.jf", "error.ts"]) ?? inheritedError;
     }
-    const apiFile = findFile(directory, ["route.ts", "route.tsx"]);
-    const rootLayout = findFile(appDir, ["layout.tsx", "layout.ts"]);
+    const apiFile = findFile(directory, ["route.jfa", "route.jf", "route.ts", "route.tsx"]);
+    const rootLayout = findFile(appDir, ["layout.jfx", "layout.jfc", "layout.jfy", "layout.tsx", "layout.jf", "layout.ts"]);
     if (pageFile) {
       const layouts: string[] = [];
       if (rootLayout) layouts.push(rootLayout);
       let parent = appDir;
       for (const segment of segments) {
         parent = resolve(parent, segment);
-        const layout = findFile(parent, ["layout.tsx", "layout.ts"]);
+        const layout = findFile(parent, ["layout.jfx", "layout.jfc", "layout.jfy", "layout.tsx", "layout.jf", "layout.ts"]);
         if (layout && !layouts.includes(layout)) layouts.push(layout);
       }
       pages.push({
@@ -135,8 +136,8 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
     }
   }
 
-  const notFound = ["not-found.tsx", "not-found.ts"].map((name) => resolve(appDir, name)).find(existsSync);
-  const middleware = findFile(appDir, ["middleware.ts"]);
+  const notFound = ["not-found.jfx", "not-found.jfy", "not-found.tsx", "not-found.jf", "not-found.ts"].map((name) => resolve(appDir, name)).find(existsSync);
+  const middleware = findFile(appDir, ["middleware.jf", "middleware.ts"]);
   walk(appDir, []);
   return { pages, api, ...(notFound ? { notFound } : {}), ...(middleware ? { middleware } : {}), watchDirs };
 }
@@ -199,6 +200,8 @@ export async function buildFullstackManifest(
     target: "node20",
     packages: "external",
     jsx: "automatic",
+    plugins: [createJavafySourcePlugin()],
+    resolveExtensions: JAVAFY_RESOLVE_EXTENSIONS,
     sourcemap: false,
     logLevel: "silent"
   });
