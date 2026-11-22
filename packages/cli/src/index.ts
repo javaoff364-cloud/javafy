@@ -83,8 +83,8 @@ function createProject(input?: string): void {
         typescript: "^5.8.3"
       }
     }, null, 2) + "\n",
-    "javafy.config.js": 'export default {\\n  name: ' + JSON.stringify(projectName) + ',\\n  dev: { host: "0.0.0.0", port: 3000 },\\n  publicDir: "public"\\n};\\n',
-    "index.html": '<!doctype html>\\n<html lang="en">\\n  <head>\\n    <meta charset="UTF-8" />\\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\\n    <title>' + projectName + '</title>\\n  </head>\\n  <body>\\n    <div id="root"></div>\\n  </body>\\n</html>\\n',
+    "javafy.config.js": 'export default {\n  name: ' + JSON.stringify(projectName) + ',\n  dev: { host: "0.0.0.0", port: 3000 },\n  publicDir: "public"\n};\n',
+    "index.html": '<!doctype html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n    <title>' + projectName + '</title>\n  </head>\n  <body>\n    <div id="root"></div>\n  </body>\n</html>\n',
     "tsconfig.json": JSON.stringify({
       compilerOptions: {
         target: "ES2022",
@@ -97,9 +97,9 @@ function createProject(input?: string): void {
       },
       include: ["src/**/*.tsx", "src/**/*.ts"]
     }, null, 2) + "\n",
-    "src/app/layout.tsx": 'import type { ReactNode } from "react";\\n\\nexport default function RootLayout({ children }: { children: ReactNode }) {\\n  return <main>{children}</main>;\\n}\\n',
-    "src/app/page.tsx": 'export default function HomePage() {\\n  return (\\n    <section>\\n      <h1>Welcome to Javafy!</h1>\\n      <p>Your application is ready.</p>\\n    </section>\\n  );\\n}\\n',
-    "README.md": '# ' + projectName + '\\n\\nA Javafy application.\\n\\n## Getting started\\n\\n\x60\x60\x60sh\\nnpm install\\nnpm run dev\\n\x60\x60\x60\\n\\nOpen http://localhost:3000.\\n\\n## Production\\n\\n\x60\x60\x60sh\\nnpm run build\\nnpm run start\\n\x60\x60\x60\\n'
+    "src/app/layout.tsx": 'import type { ReactNode } from "react";\n\nexport default function RootLayout({ children }: { children: ReactNode }) {\n  return <main>{children}</main>;\n}\n',
+    "src/app/page.tsx": 'export default function HomePage() {\n  return (\n    <section>\n      <h1>Welcome to Javafy!</h1>\n      <p>Your application is ready.</p>\n    </section>\n  );\n}\n',
+    "README.md": '# ' + projectName + '\n\nA Javafy application.\n\n## Getting started\n\n\x60\x60\x60sh\nnpm install\nnpm run dev\n\x60\x60\x60\n\nOpen http://localhost:3000.\n\n## Production\n\n\x60\x60\x60sh\nnpm run build\nnpm run start\n\x60\x60\x60\n'
   };
 
   try {
@@ -110,11 +110,11 @@ function createProject(input?: string): void {
       writeFileSync(destination, content, { flag: "wx" });
     }
     mkdirSync(join(target, "public"), { recursive: true });
-    console.log("\\n  Javafy application created successfully.\\n");
+    console.log("\n  Javafy application created successfully.\n");
     console.log("  Next steps:");
     console.log("    cd " + requestedPath);
     console.log("    npm install");
-    console.log("    npm run dev\\n");
+    console.log("    npm run dev\n");
   } catch (error) {
     console.error("Javafy: could not create the project.", error);
     process.exitCode = 1;
