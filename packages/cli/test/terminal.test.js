@@ -46,7 +46,7 @@ test("NO_COLOR disables ANSI styling and FORCE_COLOR enables it in non-TTY outpu
   assert.equal(plain.status, 0, plain.stderr);
   assert.ok(!plain.stdout.includes("\\u001b["));
 
-  const colored = run(source, { NO_COLOR: "", FORCE_COLOR: "1", TERM: "dumb" });
+  const colored = run(source, { NO_COLOR: undefined, FORCE_COLOR: "1", TERM: "dumb" });
   assert.equal(colored.status, 0, colored.stderr);
   assert.ok(colored.stdout.includes("\\u001b["));
 });
