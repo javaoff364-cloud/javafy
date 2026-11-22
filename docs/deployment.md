@@ -11,7 +11,7 @@ npm install
 npm run build
 npm run build:example
 cd examples/hello-world
-HOST=0.0.0.0 PORT=3000 node ../../packages/cli/dist/index.js start
+HOST=0.0.0.0 PORT=3000 node ../../node_modules/javafy/dist/index.js start
 ```
 
 For your own app, run the CLI from the application root after installing the published Javafy packages and building the app. Keep the server process alive with your process manager or container runtime.

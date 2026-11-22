@@ -64,7 +64,9 @@
     "htm": "_html",
     "svg": "_svg",
     "yml": "_yaml",
-    "yaml": "_yaml"
+    "yaml": "_yaml",
+    "jf": "jf",
+    "jfx": "jfx"
   },
   "fileNames": {
     "javafy.config.js": "_javafy",

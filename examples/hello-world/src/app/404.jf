@@ -1,0 +1,9 @@
+import { createElement } from "react";
+export default function NotFoundPage() {
+  return createElement("main", { style: { maxWidth: 720, margin: "12vh auto", padding: 24, textAlign: "center" } },
+    createElement("p", { style: { color: "#ff8a4c", fontWeight: 700 } }, "404 · JAVAFY"),
+    createElement("h1", null, "Page not found"),
+    createElement("p", { style: { color: "#a8b4c7" } }, "The page you requested does not exist."),
+    createElement("a", { href: "/", style: { color: "#43c8b6" } }, "Return home")
+  );
+}

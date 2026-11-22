@@ -8,7 +8,7 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 1.0.1 is published on npm. Install the CLI with `npm install -g @javafy/cli`, then scaffold an app with `javafy create <project-name>`.
+> Javafy is distributed as one npm package: install it with `npm install javafy`, then scaffold an app with `npx javafy create <project-name>`.
 
 ## Features
 
@@ -35,8 +35,8 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 ## Quick start
 
 ```bash
-npm install -g @javafy/cli
-javafy create my-javafy-app
+npm install javafy
+npx javafy create my-javafy-app
 cd my-javafy-app
 npm install
 npm run dev
@@ -120,7 +120,7 @@ The loading component is rendered inside the route's shared layouts and is only 
 Add an `error.tsx` file beside a page to provide a fallback for rendering or loader errors. A root `src/app/error.tsx` is inherited by routes without a closer error file; the nearest route-level file takes precedence.
 
 ```tsx
-import type { JavafyErrorProps } from "@javafy/router";
+import type { JavafyErrorProps } from "javafy/router";
 
 export default function ErrorPage({ error, reset }: JavafyErrorProps) {
   return (
@@ -271,7 +271,7 @@ HMR applies to modules in the application source tree. Changes that alter compon
 ## Navigation
 
 ```tsx
-import { Link, useRouter } from "@javafy/router";
+import { Link, useRouter } from "javafy/router";
 
 export function Navigation() {
   const router = useRouter();
@@ -302,9 +302,9 @@ npm run start:example
 Or from a Javafy project directory:
 
 ```bash
-node /path/to/javafy/packages/cli/dist/index.js dev
-node /path/to/javafy/packages/cli/dist/index.js build
-node /path/to/javafy/packages/cli/dist/index.js start
+node /path/to/javafy/node_modules/javafy/dist/index.js dev
+node /path/to/javafy/node_modules/javafy/dist/index.js build
+node /path/to/javafy/node_modules/javafy/dist/index.js start
 ```
 
 - `dev` starts the development server on the configured host and port (default 3000).
@@ -351,7 +351,7 @@ The cache is per process, not distributed. Dynamic SSG supports pre-generated pa
 
 Performance is a core design goal. The 1.0.0 CI benchmark measures route matching, React SSR, and fullstack page rendering with warm-up, repeated samples, and Node/OS/CPU metadata. Reports are retained as workflow artifacts; comparisons should use equivalent environments.
 
-## Javafy 1.0.1 documentation
+## Javafy 1.0.2 documentation
 
 - [Complete public API reference](docs/API.md)
 - [Production deployment guide](docs/deployment.md)
@@ -368,7 +368,7 @@ MIT
 
 ## Javafy native source files
 
-- `.jf`: TypeScript modules, utilities, and server logic.
+- `.jf`: TypeScript modules, utilities, server logic, and JSX-free route files such as `404.jf`.
 - `.jfx`: TypeScript + JSX pages and components (TSX-equivalent).
 - `.jfc`: JSX component files.
 - `.jfa`: API route modules.
@@ -404,3 +404,20 @@ Open `extensions/vscode-javafy-icons` in VS Code and press **F5** to preview the
 ## CLI terminal
 
 Javafy CLI output uses an orange brand heading, colored status icons, bold labels, and readable muted details. ANSI styling automatically falls back to plain text; set `NO_COLOR=1` to disable it or `FORCE_COLOR=1` to force it. See [terminal UI documentation](docs/terminal-ui.md).
+
+
+## One-package installation
+
+Javafy is distributed as the single unscoped npm package `javafy`. Install one dependency and use its public subpath exports when needed:
+
+```sh
+npm install javafy
+```
+
+- `javafy`: framework configuration and core utilities
+- `javafy/router`: React router and navigation APIs
+- `javafy/server`: API and middleware runtime
+- `javafy/compiler`: Javafy source compiler APIs
+- `javafy/vercel`: Vercel Node.js adapter
+
+The internal workspace folders are build-time implementation details; applications do not need to install or publish separate `@javafy/*` packages.

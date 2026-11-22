@@ -28,11 +28,11 @@ test("javafy create scaffolds a runnable project", () => {
     assert.equal(pkg.scripts.dev, "javafy dev");
     assert.equal(pkg.scripts.build, "javafy build");
     assert.equal(pkg.scripts.start, "javafy start");
-    assert.equal(pkg.dependencies["@javafy/cli"], "1.0.1");
+    assert.equal(pkg.dependencies.javafy, "^1.0.2");
     assert.ok(readFileSync(join(project, "src/app/page.jfx"), "utf8").includes("Hello, Javafy."));
     assert.ok(readFileSync(join(project, "src/app/about/page.jfx"), "utf8").includes("Build faster. Run smarter."));
     assert.ok(readFileSync(join(project, "src/app/blog/[id]/page.jfx"), "utf8").includes("params.id"));
-    assert.ok(readFileSync(join(project, "src/app/not-found.jfx"), "utf8").includes("Page not found"));
+    assert.ok(readFileSync(join(project, "src/app/404.jf"), "utf8").includes("Page not found"));
     assert.ok(readFileSync(join(project, "src/app/error.jfx"), "utf8").includes("Try again"));
     assert.ok(readFileSync(join(project, "src/app/loading.jfx"), "utf8").includes("Loading page..."));
     assert.ok(readFileSync(join(project, "public/favicon.svg"), "utf8").includes("#FF6B35"));

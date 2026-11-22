@@ -1,46 +1,109 @@
 {
   "name": "javafy",
-  "version": "1.0.1",
-  "private": true,
-  "description": "A high-performance TypeScript fullstack framework.",
+  "version": "1.0.2",
+  "description": "A fullstack React and TypeScript framework with native .jf and .jfx source files.",
   "license": "MIT",
-  "packageManager": "npm@10",
+  "type": "module",
+  "main": "./packages/core/dist/index.js",
+  "types": "./packages/core/dist/index.d.ts",
+  "bin": {
+    "javafy": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./packages/core/dist/index.d.ts",
+      "import": "./packages/core/dist/index.js"
+    },
+    "./core": {
+      "types": "./packages/core/dist/index.d.ts",
+      "import": "./packages/core/dist/index.js"
+    },
+    "./router": {
+      "types": "./packages/router/dist/index.d.ts",
+      "import": "./packages/router/dist/index.js"
+    },
+    "./server": {
+      "types": "./packages/server/dist/index.d.ts",
+      "import": "./packages/server/dist/index.js"
+    },
+    "./compiler": {
+      "types": "./packages/compiler/dist/index.d.ts",
+      "import": "./packages/compiler/dist/index.js"
+    },
+    "./vercel": {
+      "types": "./packages/cli/dist/vercel.d.ts",
+      "import": "./dist/vercel.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "packages/core/dist",
+    "packages/compiler/dist",
+    "packages/router/dist",
+    "packages/server/dist",
+    "packages/cli/dist/vercel.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "tsc -b",
-    "clean": "tsc -b --clean",
+    "build": "tsc -b && node scripts/bundle-cli.mjs",
+    "clean": "tsc -b --clean && rm -rf dist",
     "typecheck": "tsc -b --pretty",
     "test": "node --test",
     "dev": "npm run dev:example",
-    "dev:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js dev",
-    "build:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js build",
-    "start:example": "cd examples/hello-world && node ../../packages/cli/dist/index.js start",
+    "dev:example": "npm run build && cd examples/hello-world && node ../../dist/index.js dev",
+    "build:example": "npm run build && cd examples/hello-world && node ../../dist/index.js build",
+    "start:example": "cd examples/hello-world && node ../../dist/index.js start",
     "typecheck:example": "tsc --noEmit -p examples/hello-world/tsconfig.json",
     "benchmark": "node scripts/benchmark.mjs",
     "test:packages": "node scripts/package-smoke.mjs",
     "test:production": "npm run build && npm run typecheck:example && npm run build:example && node scripts/verify-production.mjs",
     "audit": "npm audit --omit=dev"
   },
+  "dependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-react": "^7.27.1",
+    "@babel/preset-typescript": "^7.27.1",
+    "esbuild": "^0.25.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-refresh": "^0.17.0"
+  },
   "devDependencies": {
     "@types/node": "^22.15.0",
-    "typescript": "^5.8.3",
     "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0"
+    "@types/react-dom": "^19.1.0",
+    "typescript": "^5.8.3"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
   },
-  "type": "module",
-  "dependencies": {
-    "@javafy/core": "1.0.1",
-    "@javafy/cli": "1.0.1",
-    "@javafy/router": "1.0.1",
-    "@javafy/server": "1.0.1",
-    "esbuild": "^0.25.5",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
-  }
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/javaoff364-cloud/javafy.git"
+  },
+  "homepage": "https://github.com/javaoff364-cloud/javafy#readme",
+  "bugs": {
+    "url": "https://github.com/javaoff364-cloud/javafy/issues"
+  },
+  "keywords": [
+    "javafy",
+    "framework",
+    "typescript",
+    "react",
+    "fullstack",
+    "jsx",
+    "routing",
+    "ssr",
+    "ssg",
+    "vercel"
+  ]
 }

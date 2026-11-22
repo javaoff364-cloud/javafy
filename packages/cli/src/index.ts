@@ -67,15 +67,12 @@ function createProject(input?: string): void {
   const files: Record<string, string> = {
     "package.json": JSON.stringify({
       name: projectName,
-      version: "1.0.1",
+      version: "1.0.2",
       private: true,
       type: "module",
       scripts: { dev: "javafy dev", build: "javafy build", start: "javafy start" },
       dependencies: {
-        "@javafy/cli": "1.0.1",
-        "@javafy/core": "1.0.1",
-        "@javafy/router": "1.0.1",
-        "@javafy/server": "1.0.1",
+        "javafy": "^1.0.2",
         react: "^19.1.0",
         "react-dom": "^19.1.0"
       },
@@ -123,7 +120,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <header><a className="brand" href="/"><i className="logo" />Javafy</a><nav><a href="/" aria-current="page">Home</a><a href="/about">About</a><a href="/blog/hello">Dynamic route</a></nav></header>
-      <main className="page"><p className="eyebrow">Your next project starts here</p><h1 className="title">Hello, Javafy.</h1><p className="lead">Edit <code>src/app/page.tsx</code> and save to see live reload.</p><p className="tagline">Build faster. Run smarter.</p><div className="card"><strong>Ready to build?</strong><p>Your app is running. Replace this page with your own ideas.</p><div className="actions"><a className="btn" href="/about">Explore Javafy</a><a className="btn ghost" href="/blog/hello">Try dynamic routing</a></div></div></main>
+      <main className="page"><p className="eyebrow">Your next project starts here</p><h1 className="title">Hello, Javafy.</h1><p className="lead">Edit <code>src/app/page.jfx</code> and save to see live reload.</p><p className="tagline">Build faster. Run smarter.</p><div className="card"><strong>Ready to build?</strong><p>Your app is running. Replace this page with your own ideas.</p><div className="actions"><a className="btn" href="/about">Explore Javafy</a><a className="btn ghost" href="/blog/hello">Try dynamic routing</a></div></div></main>
       <footer><span>Build faster. Run smarter.</span><span>Javafy ${JAVAFY_VERSION}</span></footer>
     </>
   );
@@ -137,11 +134,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return <><header><a className="brand" href="/"><i className="logo" />Javafy</a></header><main className="page"><p className="eyebrow">Dynamic route demo</p><h1 className="heading">Hello, {params.id}!</h1><p className="lead">This route was rendered from the dynamic segment <code>[id]</code>.</p><div className="card"><strong>Route parameter</strong><p><code>{params.id}</code></p></div><div className="actions"><a className="btn" href="/">Back home</a></div></main><footer><span>Build faster. Run smarter.</span><span>Javafy ${JAVAFY_VERSION}</span></footer></>;
 }
 `,
-    "src/app/not-found.jfx": `export default function NotFound() {
-  return <><header><a className="brand" href="/"><i className="logo" />Javafy</a></header><main className="center"><div className="code" aria-label="404"><span>4</span><svg className="snake" viewBox="0 0 100 140" aria-hidden="true"><path className="track" d="M15 50 A35 35 0 0 1 85 50 L85 90 A35 35 0 0 1 15 90 Z"/><circle className="food" cx="50" cy="70" r="4.5"/><path className="sbody" d="M15 50 A35 35 0 0 1 85 50 L85 90 A35 35 0 0 1 15 90 Z"/><path className="shead" d="M15 50 A35 35 0 0 1 85 50 L85 90 A35 35 0 0 1 15 90 Z"/></svg><span>4</span></div><h1 className="heading">Page not found</h1><p className="lead">This route does not exist in your Javafy app.</p><div className="actions"><a className="btn" href="/">Return home</a></div></main><footer><span>Build faster. Run smarter.</span><span>Javafy ${JAVAFY_VERSION}</span></footer></>;
+    "src/app/404.jf": `import { createElement } from "react";
+
+export default function NotFound() {
+  return createElement("main", { className: "center" },
+    createElement("p", { className: "eyebrow" }, "404 · JAVAFY"),
+    createElement("h1", { className: "heading" }, "Page not found"),
+    createElement("p", { className: "lead" }, "This route does not exist in your Javafy app."),
+    createElement("a", { className: "btn", href: "/" }, "Return home")
+  );
 }
 `,
-    "src/app/error.jfx": `import type { JavafyErrorProps } from "@javafy/router";
+    "src/app/error.jfx": `import type { JavafyErrorProps } from "javafy/router";
 export default function ErrorPage({ error, reset }: JavafyErrorProps) {
   return <><header><a className="brand" href="/"><i className="logo" />Javafy</a></header><main className="center" role="alert"><p className="eyebrow danger">Javafy error</p><h1 className="heading">Something went wrong.</h1><p className="lead">This page could not be rendered.</p><pre className="errorbox">{error.message}</pre><div className="actions"><button className="btn" onClick={reset}>Try again</button><a className="btn ghost" href="/">Go home</a></div></main><footer><span>Build faster. Run smarter.</span><span>Javafy ${JAVAFY_VERSION}</span></footer></>;
 }
@@ -151,7 +155,7 @@ export default function ErrorPage({ error, reset }: JavafyErrorProps) {
 }
 `,
     "src/lib/greeting.jf": "export function greet(name: string): string { return `Hello, ${name}!`; }\n",
-    "api/index.js": 'import handler from "@javafy/cli/dist/vercel.js";\nexport default handler;\n',
+    "api/index.js": 'import handler from "javafy/vercel";\nexport default handler;\n',
     "vercel.json": JSON.stringify({ buildCommand: "npm run build", outputDirectory: "dist", rewrites: [{ source: "/(.*)", destination: "/api/index?__javafy_path=/$1" }], functions: { "api/index.js": { memory: 1024, maxDuration: 10 } } }, null, 2) + "\n",
     "public/favicon.svg": `<svg xmlns="http://www.w3.org/2000/svg" width="272" height="272" viewBox="120 120 272 272"><rect x="310" y="126" width="76" height="76" rx="18" fill="#FF6B35"/><rect x="310" y="218" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="310" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="218" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="126" y="310" width="76" height="76" rx="18" fill="#0EA5A4"/><rect x="126" y="218" width="76" height="76" rx="18" fill="#0EA5A4"/></svg>
 `,
@@ -221,7 +225,7 @@ function discoverRoutes(appDir: string): {
 } {
   const routes: DiscoveredRoute[] = [];
   const watchDirs: string[] = [];
-  const notFoundPath = ["not-found.jfx", "not-found.jfy", "not-found.tsx", "not-found.jf", "not-found.ts"].map((name) => join(appDir, name)).find(existsSync);
+  const notFoundPath = ["404.jf", "404.jfx", "not-found.jfx", "not-found.jfy", "not-found.tsx", "not-found.jf", "not-found.ts"].map((name) => join(appDir, name)).find(existsSync);
   const layoutFile = (directory: string) =>
     ["layout.jfx", "layout.jfc", "layout.jfy", "layout.tsx", "layout.jf", "layout.ts"].map((name) => join(directory, name)).find(existsSync);
 
