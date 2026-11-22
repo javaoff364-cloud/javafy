@@ -322,3 +322,58 @@ test("server loader receives the navigation request abort signal", async () => {
   controller.abort();
   assert.equal(receivedSignal.aborted, true);
 });
+
+
+test("supports getStaticPaths fallback blocking for paths not generated at build time", async () => {
+  let loaderCalls = 0;
+  const manifest = {
+    pages: [{
+      path: "/products/:slug",
+      component: ({ title }) => title,
+      layouts: [],
+      getStaticPaths: async () => ({
+        paths: [{ params: { slug: "known" } }],
+        fallback: "blocking"
+      }),
+      getStaticProps: async ({ params }) => ({ title: "Generated on demand: " + params.slug, call: ++loaderCalls })
+    }],
+    apiRoutes: []
+  };
+  const known = await renderFullstackPage(manifest, "/products/known", { static: true });
+  assert.equal(known.status, 200);
+  assert.deepEqual(known.props, { title: "Generated on demand: known", call: 1 });
+
+  const fallback = await renderFullstackPage(manifest, "/products/new-item", {
+    request: new Request("http://localhost/products/new-item")
+  });
+  assert.equal(fallback.status, 200);
+  assert.deepEqual(fallback.props, { title: "Generated on demand: new-item", call: 2 });
+});
+
+test("keeps cached loader data isolated by authorization and cookie identity", async () => {
+  let calls = 0;
+  const manifest = {
+    pages: [{
+      path: "/account",
+      component: () => null,
+      layouts: [],
+      revalidate: 30,
+      getCacheKey: () => "account",
+      getServerSideProps: async ({ request }) => ({
+        identity: request.headers.get("authorization") ?? request.headers.get("cookie"),
+        call: ++calls
+      })
+    }],
+    apiRoutes: []
+  };
+  const load = (identity, header = "authorization") => renderFullstackPage(manifest, "/account", {
+    request: new Request("http://localhost/account", { headers: { [header]: identity } })
+  });
+  const first = await load("Bearer user-a");
+  const same = await load("Bearer user-a");
+  const other = await load("Bearer user-b");
+  assert.equal(first.props.call, 1);
+  assert.equal(same.props.call, 1);
+  assert.equal(other.props.call, 2);
+  assert.equal(calls, 2);
+});
