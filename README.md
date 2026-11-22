@@ -4,7 +4,7 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 0.9.0 is the current stable release.
+> Javafy 1.0.0 is the production-readiness candidate on `feat/1.0.0`; 0.9.0 remains the latest published stable release.
 
 ## Features
 
