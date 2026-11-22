@@ -4,7 +4,7 @@ import {
   cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync,
   watch, writeFileSync
 } from "node:fs";
-import { dirname, extname, join, normalize, relative, resolve, sep } from "node:path";
+import { basename, dirname, extname, join, normalize, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createApiRouter, createMiddlewareHandler } from "@javafy/server";
 import { buildFullstackManifest, discoverFullstackFiles, getStaticRoutePaths, loadFullstackManifest, renderFullstackPage } from "./fullstack.js";
@@ -25,6 +25,7 @@ Usage:
   javafy <command>
 
 Commands:
+  create    Create a new Javafy application
   dev       Start the development server with routing and React Fast Refresh
   build     Build the application for production
   start     Start the production SSR/API server
@@ -37,6 +38,87 @@ Routing:
   src/app/blog/[id]/page.tsx   /blog/:id
   src/app/layout.tsx           Shared layout
 `);
+}
+
+function createProject(input?: string): void {
+  const requestedPath = input?.trim();
+  if (!requestedPath) {
+    console.error("Usage: javafy create <project-name>");
+    process.exitCode = 1;
+    return;
+  }
+
+  const target = resolve(process.cwd(), requestedPath);
+  const projectName = basename(target)
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^[._-]+|[._-]+$/g, "") || "javafy-app";
+
+  if (existsSync(target)) {
+    if (!statSync(target).isDirectory() || readdirSync(target).length > 0) {
+      console.error("Javafy: target directory already exists and is not empty: " + target);
+      process.exitCode = 1;
+      return;
+    }
+  }
+
+  const files: Record<string, string> = {
+    "package.json": JSON.stringify({
+      name: projectName,
+      version: "1.0.0",
+      private: true,
+      type: "module",
+      scripts: { dev: "javafy dev", build: "javafy build", start: "javafy start" },
+      dependencies: {
+        "@javafy/cli": "1.0.0",
+        "@javafy/core": "1.0.0",
+        "@javafy/router": "1.0.0",
+        "@javafy/server": "1.0.0",
+        react: "^19.1.0",
+        "react-dom": "^19.1.0"
+      },
+      devDependencies: {
+        "@types/react": "^19.1.0",
+        "@types/react-dom": "^19.1.0",
+        typescript: "^5.8.3"
+      }
+    }, null, 2) + "\n",
+    "javafy.config.js": 'export default {\\n  name: ' + JSON.stringify(projectName) + ',\\n  dev: { host: "0.0.0.0", port: 3000 },\\n  publicDir: "public"\\n};\\n',
+    "index.html": '<!doctype html>\\n<html lang="en">\\n  <head>\\n    <meta charset="UTF-8" />\\n    <meta name="viewport" content="width=device-width, initial-scale=1.0" />\\n    <title>' + projectName + '</title>\\n  </head>\\n  <body>\\n    <div id="root"></div>\\n  </body>\\n</html>\\n',
+    "tsconfig.json": JSON.stringify({
+      compilerOptions: {
+        target: "ES2022",
+        module: "ESNext",
+        moduleResolution: "Bundler",
+        jsx: "react-jsx",
+        strict: true,
+        skipLibCheck: true,
+        noEmit: true
+      },
+      include: ["src/**/*.tsx", "src/**/*.ts"]
+    }, null, 2) + "\n",
+    "src/app/layout.tsx": 'import type { ReactNode } from "react";\\n\\nexport default function RootLayout({ children }: { children: ReactNode }) {\\n  return <main>{children}</main>;\\n}\\n',
+    "src/app/page.tsx": 'export default function HomePage() {\\n  return (\\n    <section>\\n      <h1>Welcome to Javafy!</h1>\\n      <p>Your application is ready.</p>\\n    </section>\\n  );\\n}\\n',
+    "README.md": '# ' + projectName + '\\n\\nA Javafy application.\\n\\n## Getting started\\n\\n\x60\x60\x60sh\\nnpm install\\nnpm run dev\\n\x60\x60\x60\\n\\nOpen http://localhost:3000.\\n\\n## Production\\n\\n\x60\x60\x60sh\\nnpm run build\\nnpm run start\\n\x60\x60\x60\\n'
+  };
+
+  try {
+    mkdirSync(target, { recursive: true });
+    for (const [file, content] of Object.entries(files)) {
+      const destination = join(target, file);
+      mkdirSync(dirname(destination), { recursive: true });
+      writeFileSync(destination, content, { flag: "wx" });
+    }
+    mkdirSync(join(target, "public"), { recursive: true });
+    console.log("\\n  Javafy application created successfully.\\n");
+    console.log("  Next steps:");
+    console.log("    cd " + requestedPath);
+    console.log("    npm install");
+    console.log("    npm run dev\\n");
+  } catch (error) {
+    console.error("Javafy: could not create the project.", error);
+    process.exitCode = 1;
+  }
 }
 
 async function loadConfig(): Promise<JavafyConfig> {
@@ -772,6 +854,7 @@ async function main(): Promise<void> {
     console.log(JAVAFY_VERSION);
     return;
   }
+  if (command === "create") return createProject(process.argv[3]);
   if (command === "dev") return dev();
   if (command === "build") return build();
   if (command === "start") return start();
