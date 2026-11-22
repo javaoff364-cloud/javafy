@@ -1,6 +1,6 @@
 {
   "name": "javafy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "A high-performance TypeScript fullstack framework.",
   "license": "MIT",
@@ -35,10 +35,10 @@
   },
   "type": "module",
   "dependencies": {
-    "@javafy/core": "1.0.0",
-    "@javafy/cli": "1.0.0",
-    "@javafy/router": "1.0.0",
-    "@javafy/server": "1.0.0",
+    "@javafy/core": "1.0.1",
+    "@javafy/cli": "1.0.1",
+    "@javafy/router": "1.0.1",
+    "@javafy/server": "1.0.1",
     "esbuild": "^0.25.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
