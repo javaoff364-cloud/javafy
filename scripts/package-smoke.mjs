@@ -51,7 +51,13 @@ try {
   for (const workspace of workspaces) {
     const output = runNpm(["pack", "--workspace", workspace, "--pack-destination", tarballDir, "--json"]);
     const parsed = JSON.parse(output);
-    // npm versions differ: `npm pack --json` may return an array or a\n    // workspace-keyed object. Normalize both shapes before validating.\n    const packed = Array.isArray(parsed)\n      ? parsed\n      : Object.values(parsed).filter((entry) => entry && typeof entry === "object" && "filename" in entry);\n    assert.equal(packed.length, 1, workspace + " should produce exactly one package tarball");\n    const [packageInfo] = packed;\n    const files = packageInfo.files.map((file) => file.path);
+    // npm versions differ: `npm pack --json` may return an array or a
+    // workspace-keyed object. Normalize both shapes before validating.
+    const packed = Array.isArray(parsed)
+      ? parsed
+      : Object.values(parsed).filter((entry) => entry && typeof entry === "object" && "filename" in entry);
+    assert.equal(packed.length, 1, workspace + " should produce exactly one package tarball");
+    const [packageInfo] = packed;\n    const files = packageInfo.files.map((file) => file.path);
     assert.ok(files.some((file) => file.startsWith("dist/")), workspace + " does not include compiled dist files");
     assert.ok(files.includes("README.md"), workspace + " does not include its npm README");
     assert.ok(!files.some((file) => /(^|\/)(test|tests|\.github)(\/|$)/.test(file)), workspace + " includes test or CI files");
