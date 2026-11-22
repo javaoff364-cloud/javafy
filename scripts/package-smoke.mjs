@@ -11,18 +11,31 @@ const fixtureDir = join(temporary, "fixture");
 mkdirSync(tarballDir, { recursive: true });
 mkdirSync(fixtureDir, { recursive: true });
 
-function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
-    cwd: options.cwd ?? root,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"]
-  });
+function assertProcessSucceeded(label, args, result) {
   assert.equal(
     result.status,
     0,
-    command + " " + args.join(" ") + " failed:\n" + result.stdout + "\n" + result.stderr
+    label + " " + args.join(" ") + " failed:\n" + result.stdout + "\n" + result.stderr
   );
   return result.stdout;
+}
+
+function runNpm(args, cwd = root) {
+  const result = spawnSync("npm", args, {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  return assertProcessSucceeded("npm", args, result);
+}
+
+function runNode(args, cwd = root) {
+  const result = spawnSync(process.execPath, args, {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  return assertProcessSucceeded("node", args, result);
 }
 
 try {
@@ -36,7 +49,7 @@ try {
   };
 
   for (const workspace of workspaces) {
-    const output = run("npm", ["pack", "--workspace", workspace, "--pack-destination", tarballDir, "--json"]);
+    const output = runNpm(["pack", "--workspace", workspace, "--pack-destination", tarballDir, "--json"]);
     const packed = JSON.parse(output);
     assert.equal(packed.length, 1);
     const files = packed[0].files.map((file) => file.path);
@@ -65,7 +78,7 @@ try {
     'if (resolveConfig().dev.port !== 3000) throw new Error("core package import failed");',
     'if (typeof createApiRouter !== "function" || typeof createRouter !== "function") throw new Error("package exports failed");'
   ].join("\n");
-  run(process.execPath, ["--input-type=module", "-e", importCheck], { cwd: fixtureDir });
+  runNode(["--input-type=module", "-e", importCheck], fixtureDir);
 
   const cliOutput = run(process.execPath, ["node_modules/@javafy/cli/dist/index.js", "--version"], { cwd: fixtureDir }).trim();
   assert.match(cliOutput, /^\d+\.\d+\.\d+$/);
