@@ -111,7 +111,7 @@ function createProject(input?: string): void {
       writeFileSync(destination, content, { flag: "wx" });
     }
     mkdirSync(join(target, "public"), { recursive: true });
-    terminal.title("application created");
+    terminal.title("application created successfully");
     terminal.success("Your Javafy project is ready.");
     terminal.info("Next steps");
     terminal.step("cd " + requestedPath);
