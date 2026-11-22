@@ -1,0 +1,18 @@
+{
+  "name": "@javafy/compiler",
+  "version": "1.0.1",
+  "description": "Lexer, parser and AST foundation for the Javafy custom source language.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist", "!dist/**/*.tsbuildinfo", "!dist/**/*.map"],
+  "scripts": { "build": "tsc -b" },
+  "repository": { "type": "git", "url": "https://github.com/javaoff364-cloud/javafy.git", "directory": "packages/compiler" },
+  "homepage": "https://github.com/javaoff364-cloud/javafy#readme",
+  "bugs": { "url": "https://github.com/javaoff364-cloud/javafy/issues" },
+  "engines": { "node": ">=20.0.0", "npm": ">=10.0.0" },
+  "publishConfig": { "access": "public" },
+  "keywords": ["javafy", "compiler", "parser", "ast"]
+}
