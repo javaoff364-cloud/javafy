@@ -24,7 +24,7 @@ Javafy includes a zero-dependency terminal presentation layer. It keeps output r
 ## Example
 
 ```ts
-import { terminal } from "@javafy/cli/terminal";
+import { terminal } from "./terminal.js";
 
 terminal.title("development server");
 terminal.section("Server");
