@@ -40,7 +40,6 @@ The publisher must be signed in to npm and have publish permission for the
 ```sh
 npm login
 npm whoami
-npm access list packages @javafy
 ```
 
 Never share an npm password, access token, or one-time code in chat or commit
