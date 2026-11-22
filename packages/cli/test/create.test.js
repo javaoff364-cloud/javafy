@@ -28,7 +28,7 @@ test("javafy create scaffolds a runnable project", () => {
     assert.equal(pkg.scripts.dev, "javafy dev");
     assert.equal(pkg.scripts.build, "javafy build");
     assert.equal(pkg.scripts.start, "javafy start");
-    assert.equal(pkg.dependencies["@javafy/cli"], "1.0.0");
+    assert.equal(pkg.dependencies["@javafy/cli"], "1.0.1");
     assert.ok(readFileSync(join(project, "src/app/page.tsx"), "utf8").includes("Welcome to Javafy!"));
     assert.ok(readFileSync(join(project, "src/app/layout.tsx"), "utf8").includes("RootLayout"));
     assert.ok(readFileSync(join(project, "index.html"), "utf8").includes('id="root"'));
