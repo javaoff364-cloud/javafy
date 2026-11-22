@@ -57,7 +57,8 @@ try {
       ? parsed
       : Object.values(parsed).filter((entry) => entry && typeof entry === "object" && "filename" in entry);
     assert.equal(packed.length, 1, workspace + " should produce exactly one package tarball");
-    const [packageInfo] = packed;\n    const files = packageInfo.files.map((file) => file.path);
+    const [packageInfo] = packed;
+    const files = packageInfo.files.map((file) => file.path);
     assert.ok(files.some((file) => file.startsWith("dist/")), workspace + " does not include compiled dist files");
     assert.ok(files.includes("README.md"), workspace + " does not include its npm README");
     assert.ok(!files.some((file) => /(^|\/)(test|tests|\.github)(\/|$)/.test(file)), workspace + " includes test or CI files");
