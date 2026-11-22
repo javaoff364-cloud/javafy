@@ -1,6 +1,6 @@
 # Hello Javafy
 
-A fullstack example covering file-based routing, request middleware, SSR/SSG, and route-level loading UI for Javafy 0.8.0.
+A Javafy 1.0.0 fullstack example covering file-based routing, request middleware, SSR/SSG, dynamic routes, route loading/error UI, and client navigation.
 
 From the Javafy repository root:
 

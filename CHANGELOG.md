@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — Production Readiness (candidate)
+## 1.0.0 — Production Readiness
 
 - Added dynamic SSG blocking fallback through `getStaticPaths` returning `{ paths, fallback: "blocking" }`; the default remains `false`.
 - Scoped request-time loader cache entries by route parameters, application cache key, and a SHA-256 digest of authorization/cookie identity to reduce cross-user cache collisions.
@@ -10,7 +10,7 @@
 - Added package tarball content checks, a Node.js 20/22/24 CI matrix, production smoke tests, performance artifacts, npm audit, and CodeQL analysis.
 - Added a complete public API reference and Node.js production deployment guide.
 
-This is a development candidate on `feat/1.0.0`; it is not a published 1.0.0 release. Merge and release remain blocked until the complete acceptance plan is reviewed and every final check passes.
+These notes describe the 1.0.0 code merged into `main`. npm publication is performed separately for the four public `@javafy/*` workspace packages.
 
 ## 0.9.0 — Reliability & Data UX
 

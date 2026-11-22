@@ -54,6 +54,7 @@ try {
     assert.equal(packed.length, 1);
     const files = packed[0].files.map((file) => file.path);
     assert.ok(files.some((file) => file.startsWith("dist/")), workspace + " does not include compiled dist files");
+    assert.ok(files.includes("README.md"), workspace + " does not include its npm README");
     assert.ok(!files.some((file) => /(^|\/)(test|tests|\.github)(\/|$)/.test(file)), workspace + " includes test or CI files");
     assert.ok(!files.some((file) => /\.map$|\.tsbuildinfo$/.test(file)), workspace + " includes build-only artifacts");
     const expectedFilename = packageTarballNames[workspace] + "-1.0.0.tgz";

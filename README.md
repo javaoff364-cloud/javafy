@@ -4,7 +4,7 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 1.0.0 is the production-readiness candidate on `feat/1.0.0`; 0.9.0 remains the latest published stable release.
+> Javafy 1.0.0 is merged into `main`. The four scoped workspace packages are prepared for npm publication.
 
 ## Features
 
@@ -110,26 +110,6 @@ export default function Loading() {
 ```
 
 The loading component is rendered inside the route's shared layouts and is only shown during client-side data transitions; initial SSR/SSG rendering remains unchanged.
-
-### Route error UI
-
-Add `error.tsx` beside a page to provide a route error boundary. A root `src/app/error.tsx` is inherited by descendants; the nearest ancestor error file takes precedence. The component receives `error`, `reset`, `params`, and `pathname`:
-
-```tsx
-import type { JavafyErrorProps } from "@javafy/router";
-
-export default function ErrorPage({ error, reset }: JavafyErrorProps) {
-  return (
-    <main role="alert">
-      <h1>Something went wrong</h1>
-      <p>{error.message}</p>
-      <button onClick={reset}>Try again</button>
-    </main>
-  );
-}
-```
-
-The same nearest-route fallback is used for server loader and server-render failures. Keep error messages safe to display; detailed diagnostics are written to the server log.
 
 ### Route error UI
 
@@ -276,7 +256,7 @@ Dynamic pages are prerendered for the parameter sets returned by `getStaticPaths
 
 Returned props are serialized into the HTML for hydration. Do not put secrets in page props.
 
-## Development runtime (0.6.0)
+## Development runtime
 
 The development server transforms React components with the React Refresh Babel transform. When a module changes, Javafy rebuilds split ESM output and imports the updated application entry without reloading the document. React roots and unchanged vendor chunks are reused so compatible component state can survive edits.
 
@@ -331,10 +311,11 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 
 ## Current limitations
 
-- Fullstack client navigation currently uses JSON data requests; streaming navigation is not included.
-- `getStaticPaths` currently accepts an array of `{ params }` objects; fallback modes are not implemented.
-- Streaming SSR and `getStaticPaths` fallback modes are not included. React Fast Refresh is development-only.
-- API routes use Web Request/Response handlers and do not currently provide a built-in database layer.
+- Fullstack client navigation uses JSON data requests; streaming navigation is not included.
+- Streaming SSR is not included.
+- React Fast Refresh is development-only; incompatible component signatures, global side effects, HTML shell changes, and server-only route changes may require a full refresh or restart.
+- API routes use Web `Request`/`Response` handlers and do not include a built-in database or authentication layer.
+- Dynamic SSG supports pre-generated paths and `fallback: false` or `fallback: "blocking"`; blocking fallback requires the Node.js production server.
 
 ## Roadmap
 
@@ -349,7 +330,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.7.0 | Client Navigation | SPA/fullstack client transitions, server-loader refresh, router URL state, browser history integration and navigation regression coverage |
 | 0.8.0 | Request Middleware & Navigation UX | Composable middleware across API/SSR/navigation requests, inherited route-level loading UI, same-origin link prefetching, and regression coverage |
 | 0.9.0 | Reliability & Data UX | Route error boundaries, abortable navigation, explicit server-loader cache/revalidation, and runtime diagnostics |
-| 1.0.0 | Production | Bundle optimization, production security hardening, reproducible benchmarks, and deployment guidance |
+| 1.0.0 | Production | Dynamic SSG fallback, cache isolation, API hardening, route-cache optimization, package verification, security analysis, benchmarks, and deployment guidance |
 
 ### 0.9.0 implementation details
 
@@ -366,7 +347,7 @@ The cache is per process, not distributed. Dynamic SSG supports pre-generated pa
 
 Performance is a core design goal. The 1.0.0 CI benchmark measures route matching, React SSR, and fullstack page rendering with warm-up, repeated samples, and Node/OS/CPU metadata. Reports are retained as workflow artifacts; comparisons should use equivalent environments.
 
-## 1.0.0 candidate documentation
+## Javafy 1.0.0 documentation
 
 - [Complete public API reference](docs/API.md)
 - [Production deployment guide](docs/deployment.md)
