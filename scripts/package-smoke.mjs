@@ -57,11 +57,11 @@ try {
   runNpm(["install", "--offline", "--no-audit", "--no-fund", "--no-save", "--package-lock=false", "--prefix", fixtureDir, ...tarballs]);
   const importCheck = [
     'import { resolveConfig } from "@javafy/core";',
-    'import { parse } from "@javafy/compiler";',
+    'import { parse, generate } from "@javafy/compiler";',
     'import { createApiRouter } from "@javafy/server";',
     'import { createRouter } from "@javafy/router";',
     'if (resolveConfig().dev.port !== 3000) throw new Error("core package import failed");',
-    'if (parse("page Home { render {} }").page.name !== "Home") throw new Error("compiler package import failed");',
+    'if (parse("page Home { render {} }").page.name !== "Home") throw new Error("compiler parser import failed");\nif (!generate(parse("page Home { render { h1 \\"Hi\\" } }")).includes("React.createElement")) throw new Error("compiler codegen import failed");',
     'if (typeof createApiRouter !== "function" || typeof createRouter !== "function") throw new Error("package exports failed");'
   ].join("\n");
   runNode(["--input-type=module", "-e", importCheck], fixtureDir);
