@@ -364,3 +364,34 @@ Issues and pull requests are welcome. Include reproduction steps and environment
 ## License
 
 MIT
+
+
+## Javafy editor icons
+
+Javafy includes its own VS Code file icon theme. Native project files have distinct icons, while common web files use familiar language colors.
+
+| Preview | File | Meaning |
+| --- | --- | --- |
+| ![Javafy](assets/vscode-icons/javafy.svg) | `javafy.config.js` | Project config |
+| ![Page](assets/vscode-icons/jfy.svg) | `.jfy` | Pages and routes |
+| ![Component](assets/vscode-icons/jfc.svg) | `.jfc` | Components |
+| ![Service](assets/vscode-icons/jfs.svg) | `.jfs` | Server services |
+| ![API](assets/vscode-icons/jfa.svg) | `.jfa` | API endpoints |
+| ![TypeScript](assets/vscode-icons/typescript.svg) | `.ts` | TypeScript |
+| ![TSX](assets/vscode-icons/tsx.svg) | `.tsx` | React + TypeScript |
+| ![JavaScript](assets/vscode-icons/javascript.svg) | `.js` | JavaScript |
+| ![JSON](assets/vscode-icons/json.svg) | `.json` | JSON |
+| ![CSS](assets/vscode-icons/css.svg) | `.css` | CSS |
+| ![Markdown](assets/vscode-icons/markdown.svg) | `.md` | Markdown |
+| ![HTML](assets/vscode-icons/html.svg) | `.html` | HTML |
+| ![SVG](assets/vscode-icons/svg.svg) | `.svg` | SVG |
+| ![YAML](assets/vscode-icons/yaml.svg) | `.yaml` | YAML |
+| ![Folder](assets/vscode-icons/folder.svg) | folders | Folders |
+
+Open `assets/vscode-icons` in VS Code, press **F5**, then select **Javafy File Icons** from **Preferences: File Icon Theme**. See [the full icon guide](docs/file-icons.md).
+
+## CLI terminal experience
+
+The CLI uses a consistent rich-text terminal style with a Javafy orange brand heading, colored status symbols, bold labels, and muted secondary details. Set `NO_COLOR=1` to disable ANSI colors or `FORCE_COLOR=1` to force them.
+
+See [CLI terminal styling](docs/terminal-ui.md).

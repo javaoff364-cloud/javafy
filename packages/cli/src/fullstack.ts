@@ -7,6 +7,7 @@ import { renderToString } from "react-dom/server";
 import { createRouter, type JavafyErrorProps, type JavafyLayoutProps, type JavafyPageProps } from "@javafy/router";
 import { matchRoute, type RouteDefinition } from "@javafy/core";
 import type { ApiRouteDefinition, JavafyMiddleware } from "@javafy/server";
+import { terminal } from "./terminal.js";
 import { build } from "esbuild";
 
 type DataContext = {
@@ -274,7 +275,7 @@ export async function renderFullstackPage(
         cacheKey = page.path + ":" + JSON.stringify(matched.params) + ":" + customKey + ":" + scope;
       }
     } catch (error) {
-      console.error("[Javafy diagnostics] getCacheKey failed for " + page.path, error);
+      terminal.error("[Javafy diagnostics] getCacheKey failed for " + page.path, error);
     }
   }
   const cacheEntry = cacheKey ? loaderCache.get(cacheKey) : undefined;
@@ -294,7 +295,7 @@ export async function renderFullstackPage(
       }
     } catch (caught) {
       const error = caught instanceof Error ? caught : new Error(String(caught));
-      console.error("[Javafy diagnostics] Server data loader failed for " + page.path, error);
+      terminal.error("[Javafy diagnostics] Server data loader failed for " + page.path, error);
       const fallback = page.error
         ? createElement(page.error, { error, reset: () => {}, params: matched.params, pathname: matched.pathname })
         : createElement("main", { role: "alert" },
@@ -323,7 +324,7 @@ export async function renderFullstackPage(
     return { html: renderToString(createElement(Router)), props, status: 200 };
   } catch (caught) {
     const error = caught instanceof Error ? caught : new Error(String(caught));
-    console.error("[Javafy diagnostics] Server render failed for " + page.path, error);
+    terminal.error("[Javafy diagnostics] Server render failed for " + page.path, error);
     const fallback = page.error
       ? createElement(page.error, { error, reset: () => {}, params: matched.params, pathname: matched.pathname })
       : createElement("main", { role: "alert" },
