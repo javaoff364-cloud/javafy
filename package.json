@@ -24,8 +24,8 @@
     "audit": "npm audit --omit=dev"
   },
   "devDependencies": {
-    "@types/node": "^22.15.0",
-    "typescript": "^5.8.3",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0"
   },
