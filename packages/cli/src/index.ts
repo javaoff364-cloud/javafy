@@ -314,7 +314,7 @@ function createRouterPlugin(root: string, appDir: string): Plugin {
         const source = [
           'import React, { createElement } from "react";',
           'import { hydrateRoot } from "react-dom/client";',
-          'import { createRouter } from "@javafy/router";',
+          'import { createRouter } from "javafy/router";',
           ...[...imports.entries()].map(([file, name]) =>
             `import ${name} from ${JSON.stringify(file)};`
           ),

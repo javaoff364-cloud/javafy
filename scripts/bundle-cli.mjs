@@ -39,14 +39,20 @@ await build({
   packages: "external",
   alias: {
     "@javafy/core": resolve(root, "packages/core/dist/index.js"),
-    "@javafy/router": resolve(root, "packages/router/dist/index.js"),
     "@javafy/server": resolve(root, "packages/server/dist/index.js")
   },
   external: [
-    "esbuild", "react", "react-dom", "react-dom/*",
+    "esbuild", "react", "react-dom", "react-dom/*", "@javafy/router",
     "@babel/core", "@babel/preset-react", "@babel/preset-typescript",
     "react-refresh", "react-refresh/*"
   ],
   sourcemap: false,
   logLevel: "info"
 });
+
+// Keep one router context shared by the framework runtime and user page imports.
+for (const name of ["index.js", "vercel.js"]) {
+  const file = resolve(output, name);
+  const source = readFileSync(file, "utf8");
+  writeFileSync(file, source.replaceAll('"@javafy/router"', '"javafy/router"'));
+}
