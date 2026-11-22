@@ -23,6 +23,8 @@
     "build": "tsc -b"
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.tsbuildinfo",
+    "!dist/**/*.map"
   ]
 }
