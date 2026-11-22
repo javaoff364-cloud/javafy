@@ -15,13 +15,13 @@
     "_jfa": {
       "iconPath": "./jfa.svg"
     },
-    "_ts": {
+    "_typescript": {
       "iconPath": "./typescript.svg"
     },
     "_tsx": {
       "iconPath": "./tsx.svg"
     },
-    "_js": {
+    "_javascript": {
       "iconPath": "./javascript.svg"
     },
     "_json": {
@@ -30,7 +30,7 @@
     "_css": {
       "iconPath": "./css.svg"
     },
-    "_md": {
+    "_markdown": {
       "iconPath": "./markdown.svg"
     },
     "_html": {
@@ -51,14 +51,15 @@
     "jfc": "_jfc",
     "jfs": "_jfs",
     "jfa": "_jfa",
-    "ts": "_ts",
+    "ts": "_typescript",
     "tsx": "_tsx",
-    "js": "_js",
-    "mjs": "_js",
-    "cjs": "_js",
+    "js": "_javascript",
+    "mjs": "_javascript",
+    "cjs": "_javascript",
     "json": "_json",
     "css": "_css",
-    "md": "_md",
+    "md": "_markdown",
+    "mdx": "_markdown",
     "html": "_html",
     "htm": "_html",
     "svg": "_svg",
@@ -66,15 +67,23 @@
     "yaml": "_yaml"
   },
   "fileNames": {
-    "javafy.config.ts": "_javafy",
-    "routes.jfy": "_jfy",
-    "package.json": "_json",
-    "tsconfig.json": "_json",
-    ".gitignore": "_folder",
-    "LICENSE": "_md"
+    "javafy.config.js": "_javafy",
+    "javafy.config.ts": "_javafy"
   },
   "folder": "_folder",
   "folderExpanded": "_folder",
   "rootFolder": "_folder",
-  "rootFolderExpanded": "_folder"
+  "rootFolderExpanded": "_folder",
+  "folderNames": {
+    "app": "_jfy",
+    "api": "_jfa",
+    "components": "_jfc",
+    "services": "_jfs"
+  },
+  "folderNamesExpanded": {
+    "app": "_jfy",
+    "api": "_jfa",
+    "components": "_jfc",
+    "services": "_jfs"
+  }
 }

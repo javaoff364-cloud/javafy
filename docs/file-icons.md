@@ -1,14 +1,27 @@
-# Javafy File Icon Theme
+# Javafy File Icons
 
-The repository includes a dedicated Visual Studio Code file icon theme. Native Javafy source formats each have a distinct icon:
+## Preview
 
-| Extension | Meaning | Identity |
-| --- | --- | --- |
-| `.jfy` | Page, route and layout | Violet page |
-| `.jfc` | Reusable UI component | Pink component |
-| `.jfs` | Server-only service | Green server module |
-| `.jfa` | API endpoint | Amber API module |
+| Icon | File | Purpose |
+|---|---|---|
+| ![javafy.svg](../assets/vscode-icons/javafy.svg) | `javafy.config.js` | project configuration |
+| ![jfy.svg](../assets/vscode-icons/jfy.svg) | `.jfy` | pages and routes |
+| ![jfc.svg](../assets/vscode-icons/jfc.svg) | `.jfc` | reusable components |
+| ![jfs.svg](../assets/vscode-icons/jfs.svg) | `.jfs` | server services |
+| ![jfa.svg](../assets/vscode-icons/jfa.svg) | `.jfa` | API endpoints |
+| ![typescript.svg](../assets/vscode-icons/typescript.svg) | `.ts` | TypeScript |
+| ![tsx.svg](../assets/vscode-icons/tsx.svg) | `.tsx` | React + TypeScript |
+| ![javascript.svg](../assets/vscode-icons/javascript.svg) | `.js` | JavaScript |
+| ![json.svg](../assets/vscode-icons/json.svg) | `.json` | JSON |
+| ![css.svg](../assets/vscode-icons/css.svg) | `.css` | CSS |
+| ![markdown.svg](../assets/vscode-icons/markdown.svg) | `.md` | Markdown |
+| ![html.svg](../assets/vscode-icons/html.svg) | `.html` | HTML |
+| ![svg.svg](../assets/vscode-icons/svg.svg) | `.svg` | vector graphics |
+| ![yaml.svg](../assets/vscode-icons/yaml.svg) | `.yaml` | YAML |
+| ![folder.svg](../assets/vscode-icons/folder.svg) | `folders` | project directories |
 
-The theme also maps TypeScript, TSX, JavaScript, JSON, CSS, Markdown, HTML, SVG, YAML and folders.
+## VS Code extension
 
-The theme manifest is `assets/vscode-icons/javafy-icon-theme.json`; SVG assets live beside it. This is an editor icon theme, not a compiler or runtime feature.
+Open `extensions/vscode-javafy-icons` in VS Code, press **F5**, then choose **Javafy File Icons** in **Preferences: File Icon Theme**. For a VSIX package, run `npx @vscode/vsce package` from the extension directory.
+
+The theme changes Explorer icons, not editor colors.
