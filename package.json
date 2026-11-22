@@ -44,7 +44,12 @@
     "packages/server/dist",
     "packages/cli/dist/vercel.d.ts",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "!.npmignore",
+    "!packages/**/dist/**/*.map",
+    "!packages/**/dist/**/*.tsbuildinfo",
+    "!dist/**/*.map",
+    "!dist/**/*.tsbuildinfo"
   ],
   "workspaces": [
     "packages/*"

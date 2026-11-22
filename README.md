@@ -12,7 +12,8 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 
 ## Features
 
-- One-command project scaffolding with `javafy create <project-name>`.\n- Javafy-native `.jf` (TypeScript) and `.jfx` (TypeScript + JSX) files, with compatible `.jfc`, `.jfy`, `.jfs`, and `.jfa` formats; standard `.ts`/`.tsx` remain supported.
+- One-command project scaffolding with `javafy create <project-name>`.
+- Javafy-native `.jf` (TypeScript) and `.jfx` (TypeScript + JSX) files, with compatible `.jfc`, `.jfy`, `.jfs`, and `.jfa` formats; standard `.ts`/`.tsx` remain supported.
 - React 19 application runtime.
 - File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), nested layouts, route-level loading UI, and inherited route error boundaries.
 - File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
