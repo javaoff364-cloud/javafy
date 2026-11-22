@@ -39,7 +39,7 @@
     "@javafy/cli": "1.0.1",
     "@javafy/router": "1.0.1",
     "@javafy/server": "1.0.1",
-    "esbuild": "^0.25.5",
+    "esbuild": "^0.28.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   }
