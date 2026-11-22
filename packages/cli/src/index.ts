@@ -112,7 +112,7 @@ function createProject(input?: string): void {
     }
     mkdirSync(join(target, "public"), { recursive: true });
     terminal.title("application created");
-    terminal.success("Your Javafy project is ready.");
+    terminal.success("Javafy application created successfully.");
     terminal.info("Next steps");
     terminal.step("cd " + requestedPath);
     terminal.step("npm install");
