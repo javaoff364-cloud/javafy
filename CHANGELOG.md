@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.0.1 — CLI Project Scaffolding
+
+- Added `javafy create <project-name>` to generate a ready-to-run React 19 + TypeScript application.
+- Updated generated application dependencies to the matching 1.0.1 Javafy packages.
+- Added regression coverage for project creation, overwrite protection, and package-version alignment.
+- Updated package smoke checks and release metadata for the 1.0.1 release.
 
 - Added `javafy create <project-name>` to scaffold a ready-to-run Javafy application without cloning the framework repository.
 - Added CLI tests for project creation, missing names, and refusing to overwrite non-empty directories.
