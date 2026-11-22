@@ -65,15 +65,15 @@ function createProject(input?: string): void {
   const files: Record<string, string> = {
     "package.json": JSON.stringify({
       name: projectName,
-      version: "1.0.0",
+      version: "1.0.1",
       private: true,
       type: "module",
       scripts: { dev: "javafy dev", build: "javafy build", start: "javafy start" },
       dependencies: {
-        "@javafy/cli": "1.0.0",
-        "@javafy/core": "1.0.0",
-        "@javafy/router": "1.0.0",
-        "@javafy/server": "1.0.0",
+        "@javafy/cli": "1.0.1",
+        "@javafy/core": "1.0.1",
+        "@javafy/router": "1.0.1",
+        "@javafy/server": "1.0.1",
         react: "^19.1.0",
         "react-dom": "^19.1.0"
       },
