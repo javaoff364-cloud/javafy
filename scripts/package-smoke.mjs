@@ -28,6 +28,12 @@ function run(command, args, options = {}) {
 try {
   const workspaces = ["@javafy/core", "@javafy/router", "@javafy/server", "@javafy/cli"];
   const tarballs = [];
+  const packageTarballNames = {
+    "@javafy/core": "javafy-core",
+    "@javafy/router": "javafy-router",
+    "@javafy/server": "javafy-server",
+    "@javafy/cli": "javafy-cli"
+  };
 
   for (const workspace of workspaces) {
     const output = run("npm", ["pack", "--workspace", workspace, "--pack-destination", tarballDir, "--json"]);
@@ -37,7 +43,10 @@ try {
     assert.ok(files.some((file) => file.startsWith("dist/")), workspace + " does not include compiled dist files");
     assert.ok(!files.some((file) => /(^|\/)(test|tests|\.github)(\/|$)/.test(file)), workspace + " includes test or CI files");
     assert.ok(!files.some((file) => /\.map$|\.tsbuildinfo$/.test(file)), workspace + " includes build-only artifacts");
-    const tarball = join(tarballDir, packed[0].filename);
+    const expectedFilename = packageTarballNames[workspace] + "-1.0.0.tgz";
+    assert.equal(packed[0].filename, expectedFilename, workspace + " produced an unexpected tarball name");
+    // Build the path from a fixed workspace allowlist, never from subprocess output.
+    const tarball = join(tarballDir, expectedFilename);
     tarballs.push(tarball);
     console.log("Packed:", workspace, packed[0].version, files.length, "files");
   }
