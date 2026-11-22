@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/javafy-icon.svg" alt="Javafy framework icon" width="144" />
+</p>
+
 # Javafy
 
 **Build faster. Run smarter.**
