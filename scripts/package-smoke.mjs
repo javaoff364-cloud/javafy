@@ -27,10 +27,8 @@ try {
 
   const files = packed.files.map((file) => file.path);
   for (const required of [
-    "dist/index.js", "dist/vercel.js",
-    "packages/core/dist/index.js", "packages/router/dist/index.js",
-    "packages/server/dist/index.js", "packages/compiler/dist/index.js",
-    "README.md", "LICENSE"
+    "dist/index.js", "dist/core.js", "dist/router.js", "dist/server.js",
+    "dist/compiler.js", "dist/vercel.js", "README.md", "LICENSE"
   ]) {
     assert.ok(files.includes(required), "npm tarball is missing " + required);
   }
