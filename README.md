@@ -364,3 +364,32 @@ Issues and pull requests are welcome. Include reproduction steps and environment
 ## License
 
 MIT
+
+
+## Javafy editor icons
+
+A dedicated icon set covers Javafy's native formats and common web files.
+
+| Preview | File | Type |
+|---|---|---|
+| ![Javafy](assets/vscode-icons/javafy.svg) | `javafy.config.js` | Project config |
+| ![Page](assets/vscode-icons/jfy.svg) | `.jfy` | Pages and routes |
+| ![Component](assets/vscode-icons/jfc.svg) | `.jfc` | Components |
+| ![Service](assets/vscode-icons/jfs.svg) | `.jfs` | Server services |
+| ![API](assets/vscode-icons/jfa.svg) | `.jfa` | API endpoints |
+| ![TypeScript](assets/vscode-icons/typescript.svg) | `.ts` | TypeScript |
+| ![TSX](assets/vscode-icons/tsx.svg) | `.tsx` | React + TypeScript |
+| ![JavaScript](assets/vscode-icons/javascript.svg) | `.js` | JavaScript |
+| ![JSON](assets/vscode-icons/json.svg) | `.json` | JSON |
+| ![CSS](assets/vscode-icons/css.svg) | `.css` | CSS |
+| ![Markdown](assets/vscode-icons/markdown.svg) | `.md` | Markdown |
+| ![HTML](assets/vscode-icons/html.svg) | `.html` | HTML |
+| ![SVG](assets/vscode-icons/svg.svg) | `.svg` | SVG |
+| ![YAML](assets/vscode-icons/yaml.svg) | `.yaml` | YAML |
+| ![Folder](assets/vscode-icons/folder.svg) | folders | Folders |
+
+Open `extensions/vscode-javafy-icons` in VS Code and press **F5** to preview the extension. See [the icon guide](docs/file-icons.md).
+
+## CLI terminal
+
+Javafy CLI output uses an orange brand heading, colored status icons, bold labels, and readable muted details. ANSI styling automatically falls back to plain text; set `NO_COLOR=1` to disable it or `FORCE_COLOR=1` to force it. See [terminal UI documentation](docs/terminal-ui.md).

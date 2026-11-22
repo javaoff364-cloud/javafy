@@ -13,6 +13,7 @@ import {
   type BuildResult, type Plugin
 } from "esbuild";
 import { resolveConfig, JAVAFY_VERSION, type JavafyConfig } from "@javafy/core";
+import { terminal } from "./terminal.js";
 import { createDevClientScript, createModuleGraph, serializeBuildErrors, createFastRefreshPlugin, createReactDomClientPlugin, resolveServerOptions, listenServer, FAST_REFRESH_PREAMBLE, FAST_REFRESH_FOOTER } from "./runtime.js";
 
 const command = process.argv[2] ?? "dev";
@@ -43,7 +44,7 @@ Routing:
 function createProject(input?: string): void {
   const requestedPath = input?.trim();
   if (!requestedPath) {
-    console.error("Usage: javafy create <project-name>");
+    terminal.error("Usage: javafy create <project-name>");
     process.exitCode = 1;
     return;
   }
@@ -56,7 +57,7 @@ function createProject(input?: string): void {
 
   if (existsSync(target)) {
     if (!statSync(target).isDirectory() || readdirSync(target).length > 0) {
-      console.error("Javafy: target directory already exists and is not empty: " + target);
+      terminal.error("Target directory already exists and is not empty: " + target);
       process.exitCode = 1;
       return;
     }
@@ -110,13 +111,14 @@ function createProject(input?: string): void {
       writeFileSync(destination, content, { flag: "wx" });
     }
     mkdirSync(join(target, "public"), { recursive: true });
-    console.log("\n  Javafy application created successfully.\n");
-    console.log("  Next steps:");
-    console.log("    cd " + requestedPath);
-    console.log("    npm install");
-    console.log("    npm run dev\n");
+    terminal.title("application created successfully");
+    terminal.success("Your Javafy project is ready.");
+    terminal.info("Next steps");
+    terminal.step("cd " + requestedPath);
+    terminal.step("npm install");
+    terminal.step("npm run dev");
   } catch (error) {
-    console.error("Javafy: could not create the project.", error);
+    terminal.error("Could not create the project.", error);
     process.exitCode = 1;
   }
 }
@@ -338,7 +340,7 @@ async function sendNavigationData(
       headers: { "cache-control": "no-store" }
     });
   } catch (error) {
-    console.error("Javafy: navigation data request failed", error);
+    terminal.error("Navigation data request failed.", error);
     return Response.json({ error: "Navigation data could not be loaded." }, {
       status: 500,
       headers: { "cache-control": "no-store" }
@@ -417,7 +419,7 @@ async function dev(): Promise<void> {
   });
 
   if (!entryConfig.usesRouter && !existsSync(entryConfig.entry)) {
-    console.error("Javafy: src/main.tsx or a page in src/app/ was not found.");
+    terminal.error("src/main.tsx or a page in src/app/ was not found.");
     process.exitCode = 1;
     return;
   }
@@ -446,8 +448,8 @@ async function dev(): Promise<void> {
               const payload = serializeBuildErrors(result.errors);
               currentBuildErrorPayload = payload;
               for (const client of clients) client.write("event: build-error\ndata: " + payload + "\n\n");
-              console.error("Javafy: compilation failed");
-              for (const error of result.errors) console.error(error.text);
+              terminal.error("Compilation failed.");
+              for (const error of result.errors) terminal.step(error.text);
               resolveInitialWatchBuild();
               return;
             }
@@ -464,7 +466,7 @@ async function dev(): Promise<void> {
               client.write("event: build-success\ndata: ready\n\n");
               client.write("event: hmr\ndata: updated\n\n");
             }
-            console.log("  Javafy: application rebuilt");
+            terminal.success("Application rebuilt.");
             resolveInitialWatchBuild();
           });
         }
@@ -499,15 +501,15 @@ async function dev(): Promise<void> {
               manifest = await loadFullstackManifest(manifestFile);
               apiHandler = createApiRouter(manifest.apiRoutes, manifest.middleware ? [manifest.middleware] : []);
               syncManifestWatchers();
-              console.log("  Javafy: server routes refreshed");
+              terminal.info("Server routes refreshed.");
             } catch (error) {
-              console.error("Javafy: server route rebuild failed", error);
+              terminal.error("Server route rebuild failed.", error);
             }
           }, 100);
         });
         manifestWatchers.set(directory, watcher);
       } catch (error) {
-        console.warn("Javafy: could not watch " + directory, error);
+        terminal.warning("Could not watch " + directory, error);
       }
     }
   };
@@ -594,7 +596,7 @@ async function dev(): Promise<void> {
         const handler = createMiddlewareHandler(manifest.middleware ? [manifest.middleware] : [], (current) => sendNavigationData(current, manifest));
         await sendWebResponse(await handler(webRequest), response);
       } catch (error) {
-        console.error("Javafy: navigation middleware failed", error);
+        terminal.error("Navigation middleware failed.", error);
         sendText(response, 500, "Navigation data could not be loaded.");
       }
       return;
@@ -605,7 +607,7 @@ async function dev(): Promise<void> {
         const webRequest = await toWebRequest(request);
         await sendWebResponse(await apiHandler(webRequest), response);
       } catch (error) {
-        console.error("Javafy: API request failed", error);
+        terminal.error("API request failed.", error);
         sendText(response, 500, "Internal server error");
       }
       return;
@@ -677,10 +679,12 @@ async function dev(): Promise<void> {
     await context.dispose();
     throw error;
   }
-  console.log(`\n  Javafy ${JAVAFY_VERSION} dev server: http://${serverOptions.host}:${serverOptions.port}\n`);
-  console.log(`  File-based routing: ${entryConfig.usesRouter ? "enabled" : "not detected"}`);
-  console.log("  TypeScript/TSX compiler: enabled");
-  console.log("  Live reload: enabled\n");
+  terminal.title("development server");
+  terminal.success("Javafy " + JAVAFY_VERSION + " is ready.");
+  terminal.url("Local", "http://" + serverOptions.host + ":" + serverOptions.port);
+  terminal.info("File-based routing: " + terminal.enabled(entryConfig.usesRouter));
+  terminal.info("TypeScript/TSX compiler: " + terminal.enabled(true));
+  terminal.info("Live reload: " + terminal.enabled(true));
 
   const shutdown = async () => {
     server.close();
@@ -702,7 +706,7 @@ async function build(): Promise<void> {
   const publicRoot = resolve(root, config.publicDir);
 
   if (!entryConfig.usesRouter && !existsSync(entryConfig.entry)) {
-    console.error("Javafy: src/main.tsx or a page in src/app/ was not found.");
+    terminal.error("src/main.tsx or a page in src/app/ was not found.");
     process.exitCode = 1;
     return;
   }
@@ -744,15 +748,15 @@ async function build(): Promise<void> {
       const destination = join(output, relative);
       mkdirSync(dirname(destination), { recursive: true });
       writeFileSync(destination, document);
-      console.log("  SSG: " + pathname);
+      terminal.step("SSG " + pathname);
     }
     writeFileSync(join(output, "_redirects"), "/* /index.html 200\n");
   } else if (html) {
     writeFileSync(join(output, "index.html"), html.replace("</body>", '<script type="module" src="/assets/app.js"></script>\n</body>'));
   }
 
-  console.log("Javafy: production build created in dist/");
-  if (entryConfig.usesRouter) console.log("Javafy: client-side routes enabled; SPA fallback written to dist/_redirects");
+  terminal.success("Production build created in dist/.");
+  if (entryConfig.usesRouter) terminal.info("Client-side routes enabled; SPA fallback written to dist/_redirects.");
 }
 
 async function start(): Promise<void> {
@@ -761,7 +765,7 @@ async function start(): Promise<void> {
   const output = resolve(root, "dist");
   const manifestFile = join(output, "server", "manifest.mjs");
   if (!existsSync(manifestFile)) {
-    console.error("Javafy: production server manifest not found. Run javafy build first.");
+    terminal.error("Production server manifest not found. Run javafy build first.");
     process.exitCode = 1;
     return;
   }
@@ -784,7 +788,7 @@ async function start(): Promise<void> {
         const handler = createMiddlewareHandler(manifest.middleware ? [manifest.middleware] : [], (current) => sendNavigationData(current, manifest));
         await sendWebResponse(await handler(webRequest), response);
       } catch (error) {
-        console.error("Javafy: navigation middleware failed", error);
+        terminal.error("Navigation middleware failed.", error);
         sendText(response, 500, "Navigation data could not be loaded.");
       }
       return;
@@ -794,7 +798,7 @@ async function start(): Promise<void> {
       try {
         await sendWebResponse(await apiHandler(await toWebRequest(request)), response);
       } catch (error) {
-        console.error("Javafy: API request failed", error);
+        terminal.error("API request failed.", error);
         sendText(response, 500, "Internal server error");
       }
       return;
@@ -843,9 +847,11 @@ async function start(): Promise<void> {
   });
 
   await listenServer(server, port, host);
-  console.log("\n  Javafy production server: http://" + host + ":" + port + "\n");
-  console.log("  API routes: enabled");
-  console.log("  Server-side rendering: enabled");
+  terminal.title("production server");
+  terminal.success("Javafy production server is ready.");
+  terminal.url("Local", "http://" + host + ":" + port);
+  terminal.info("API routes: " + terminal.enabled(true));
+  terminal.info("Server-side rendering: " + terminal.enabled(true));
 }
 
 async function main(): Promise<void> {
@@ -858,12 +864,12 @@ async function main(): Promise<void> {
   if (command === "dev") return dev();
   if (command === "build") return build();
   if (command === "start") return start();
-  console.error(`Unknown command: ${command}\n`);
+  terminal.error("Unknown command: " + command);
   help();
   process.exitCode = 1;
 }
 
 main().catch((error: unknown) => {
-  console.error("Javafy error:", error);
+  terminal.error("Unexpected Javafy error.", error);
   process.exitCode = 1;
 });

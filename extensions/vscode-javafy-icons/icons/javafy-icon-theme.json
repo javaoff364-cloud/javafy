@@ -1,0 +1,89 @@
+{
+  "iconDefinitions": {
+    "_javafy": {
+      "iconPath": "./javafy.svg"
+    },
+    "_jfy": {
+      "iconPath": "./jfy.svg"
+    },
+    "_jfc": {
+      "iconPath": "./jfc.svg"
+    },
+    "_jfs": {
+      "iconPath": "./jfs.svg"
+    },
+    "_jfa": {
+      "iconPath": "./jfa.svg"
+    },
+    "_typescript": {
+      "iconPath": "./typescript.svg"
+    },
+    "_tsx": {
+      "iconPath": "./tsx.svg"
+    },
+    "_javascript": {
+      "iconPath": "./javascript.svg"
+    },
+    "_json": {
+      "iconPath": "./json.svg"
+    },
+    "_css": {
+      "iconPath": "./css.svg"
+    },
+    "_markdown": {
+      "iconPath": "./markdown.svg"
+    },
+    "_html": {
+      "iconPath": "./html.svg"
+    },
+    "_svg": {
+      "iconPath": "./svg.svg"
+    },
+    "_yaml": {
+      "iconPath": "./yaml.svg"
+    },
+    "_folder": {
+      "iconPath": "./folder.svg"
+    }
+  },
+  "fileExtensions": {
+    "jfy": "_jfy",
+    "jfc": "_jfc",
+    "jfs": "_jfs",
+    "jfa": "_jfa",
+    "ts": "_typescript",
+    "tsx": "_tsx",
+    "js": "_javascript",
+    "mjs": "_javascript",
+    "cjs": "_javascript",
+    "json": "_json",
+    "css": "_css",
+    "md": "_markdown",
+    "mdx": "_markdown",
+    "html": "_html",
+    "htm": "_html",
+    "svg": "_svg",
+    "yml": "_yaml",
+    "yaml": "_yaml"
+  },
+  "fileNames": {
+    "javafy.config.js": "_javafy",
+    "javafy.config.ts": "_javafy"
+  },
+  "folder": "_folder",
+  "folderExpanded": "_folder",
+  "rootFolder": "_folder",
+  "rootFolderExpanded": "_folder",
+  "folderNames": {
+    "app": "_jfy",
+    "api": "_jfa",
+    "components": "_jfc",
+    "services": "_jfs"
+  },
+  "folderNamesExpanded": {
+    "app": "_jfy",
+    "api": "_jfa",
+    "components": "_jfc",
+    "services": "_jfs"
+  }
+}

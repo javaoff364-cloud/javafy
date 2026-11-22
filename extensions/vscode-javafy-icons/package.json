@@ -1,0 +1,27 @@
+{
+  "name": "javafy-file-icons",
+  "displayName": "Javafy File Icons",
+  "description": "Colorful file icons for Javafy and modern web projects.",
+  "version": "1.0.0",
+  "publisher": "javaoff364-cloud",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Themes"
+  ],
+  "contributes": {
+    "iconThemes": [
+      {
+        "id": "javafy-file-icons",
+        "label": "Javafy File Icons",
+        "path": "./icons/javafy-icon-theme.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/javaoff364-cloud/javafy.git"
+  }
+}
