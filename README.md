@@ -384,7 +384,9 @@ A dedicated icon set covers Javafy's native formats and common web files.
 | Preview | File | Type |
 |---|---|---|
 | ![Javafy](assets/vscode-icons/javafy.svg) | `javafy.config.js` | Project config |
-| ![Javafy TypeScript](assets/vscode-icons/jf.svg) | `.jf` | TypeScript modules and JSX-free pages |\n| ![Javafy JSX](assets/vscode-icons/jfx.svg) | `.jfx` | TypeScript + JSX pages and components |\n| ![Page](assets/vscode-icons/jfy.svg) | `.jfy` | Legacy pages and routes |
+| ![Javafy TypeScript](assets/vscode-icons/jf.svg) | `.jf` | TypeScript modules and JSX-free pages |
+| ![Javafy JSX](assets/vscode-icons/jfx.svg) | `.jfx` | TypeScript + JSX pages and components |
+| ![Page](assets/vscode-icons/jfy.svg) | `.jfy` | Legacy pages and routes |
 | ![Component](assets/vscode-icons/jfc.svg) | `.jfc` | Components |
 | ![Service](assets/vscode-icons/jfs.svg) | `.jfs` | Server services |
 | ![API](assets/vscode-icons/jfa.svg) | `.jfa` | API endpoints |
