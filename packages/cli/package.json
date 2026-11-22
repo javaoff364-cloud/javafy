@@ -26,5 +26,28 @@
     "dist",
     "!dist/**/*.tsbuildinfo",
     "!dist/**/*.map"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/javaoff364-cloud/javafy.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/javaoff364-cloud/javafy#readme",
+  "bugs": {
+    "url": "https://github.com/javaoff364-cloud/javafy/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "javafy",
+    "typescript",
+    "react",
+    "fullstack",
+    "cli"
   ]
 }
