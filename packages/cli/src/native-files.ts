@@ -7,7 +7,7 @@ export function isJavafySourceFile(path: string): boolean {
 }
 export function createJavafySourcePlugin(): Plugin {
   return { name: "javafy-native-source", setup(build) {
-    build.onLoad({ filter: /\\.(?:jfx|jf|jfy|jfc|jfs|jfa)$/i }, (args) => ({
+    build.onLoad({ filter: /\.(?:jfx|jf|jfy|jfc|jfs|jfa)$/i }, (args) => ({
       contents: readFileSync(args.path, "utf8"),
       loader: [".jfx", ".jfy", ".jfc"].includes(extname(args.path).toLowerCase()) ? "tsx" : "ts",
       resolveDir: dirname(args.path)
