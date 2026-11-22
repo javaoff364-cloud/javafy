@@ -73,7 +73,13 @@ export function createApiRouter(
       }
       return response;
     } catch (error) {
-      // Never expose exception messages or stack details to API clients.
+      // Malformed JSON is a client input error; all other exceptions stay private.
+      if (error instanceof SyntaxError) {
+        return Response.json(
+          { error: "Bad Request", message: "The request body contains invalid JSON." },
+          { status: 400 }
+        );
+      }
       return Response.json(
         { error: "Internal Server Error", message: "An unexpected error occurred." },
         { status: 500 }
