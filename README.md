@@ -330,7 +330,7 @@ Static hosts can serve prerendered pages and assets from `dist/`. Server-side re
 | 0.7.0 | Client Navigation | SPA/fullstack client transitions, server-loader refresh, router URL state, browser history integration and navigation regression coverage |
 | 0.8.0 | Request Middleware & Navigation UX | Composable middleware across API/SSR/navigation requests, inherited route-level loading UI, same-origin link prefetching, and regression coverage |
 | 0.9.0 | Reliability & Data UX | Route error boundaries, abortable navigation, explicit server-loader cache/revalidation, and runtime diagnostics |
-| 1.0.1 | Production | Dynamic SSG fallback, cache isolation, API hardening, route-cache optimization, package verification, security analysis, benchmarks, and deployment guidance |
+| 1.0.0 | Production | Dynamic SSG fallback, cache isolation, API hardening, route-cache optimization, package verification, security analysis, benchmarks, and deployment guidance |
 
 ### 0.9.0 implementation details
 
@@ -345,13 +345,13 @@ The cache is per process, not distributed. Dynamic SSG supports pre-generated pa
 
 ## Performance
 
-Performance is a core design goal. The 1.0.1 CI benchmark measures route matching, React SSR, and fullstack page rendering with warm-up, repeated samples, and Node/OS/CPU metadata. Reports are retained as workflow artifacts; comparisons should use equivalent environments.
+Performance is a core design goal. The 1.0.0 CI benchmark measures route matching, React SSR, and fullstack page rendering with warm-up, repeated samples, and Node/OS/CPU metadata. Reports are retained as workflow artifacts; comparisons should use equivalent environments.
 
 ## Javafy 1.0.1 documentation
 
 - [Complete public API reference](docs/API.md)
 - [Production deployment guide](docs/deployment.md)
-- [1.0.1 production-readiness acceptance plan](docs/1.0.1-roadmap.md)
+- [1.0.0 production-readiness acceptance plan](docs/1.0.0-roadmap.md)
 
 ## Contributing
 
