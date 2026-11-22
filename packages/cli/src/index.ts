@@ -708,7 +708,7 @@ async function build(): Promise<void> {
   const publicRoot = resolve(root, config.publicDir);
 
   if (!entryConfig.usesRouter && !existsSync(entryConfig.entry)) {
-    console.error("Javafy: src/main.tsx or a page in src/app/ was not found.");
+    terminal.error("src/main.tsx or a page in src/app/ was not found.");
     process.exitCode = 1;
     return;
   }
@@ -790,7 +790,7 @@ async function start(): Promise<void> {
         const handler = createMiddlewareHandler(manifest.middleware ? [manifest.middleware] : [], (current) => sendNavigationData(current, manifest));
         await sendWebResponse(await handler(webRequest), response);
       } catch (error) {
-        console.error("Javafy: navigation middleware failed", error);
+        terminal.error("Navigation middleware failed.", error);
         sendText(response, 500, "Navigation data could not be loaded.");
       }
       return;
@@ -800,7 +800,7 @@ async function start(): Promise<void> {
       try {
         await sendWebResponse(await apiHandler(await toWebRequest(request)), response);
       } catch (error) {
-        console.error("Javafy: API request failed", error);
+        terminal.error("API request failed.", error);
         sendText(response, 500, "Internal server error");
       }
       return;
