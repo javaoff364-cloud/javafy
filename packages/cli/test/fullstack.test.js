@@ -379,7 +379,7 @@ test("keeps cached loader data isolated by authorization and cookie identity", a
 });
 
 test("discovers and compiles Javafy-native page, component, and API extensions", async () => {
-  const root = mkdtempSync(join(tmpdir(), "javafy-native-"));
+  const root = mkdtempSync(join(process.cwd(), ".javafy-native-"));
   const app = join(root, "src", "app");
   mkdirSync(join(app, "about"), { recursive: true });
   mkdirSync(join(app, "api", "hello"), { recursive: true });
