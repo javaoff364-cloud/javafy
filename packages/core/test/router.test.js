@@ -101,3 +101,11 @@ test("does not match extra path segments on non-catch-all routes", () => {
   const routes = [{ path: "/blog/:id" }];
   assert.equal(matchRoute("/blog/post-1/comments", routes), null);
 });
+
+test("validates route tables and rejects ambiguous definitions", async () => {
+  const { validateRouteDefinitions } = await import("../dist/router.js");
+  assert.doesNotThrow(() => validateRouteDefinitions([{ path: "/" }, { path: "/users/:id" }, { path: "/docs/*slug?" }]));
+  assert.throws(() => validateRouteDefinitions([{ path: "/users/:id" }, { path: "/users/:slug" }]), /ambiguous route patterns/);
+  assert.throws(() => validateRouteDefinitions([{ path: "/users/:id/:id" }]), /invalid route pattern/);
+  assert.throws(() => validateRouteDefinitions([{ path: "/about" }, { path: "/about/" }]), /ambiguous route patterns/);
+});

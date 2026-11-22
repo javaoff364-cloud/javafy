@@ -1,5 +1,5 @@
 /** Javafy server runtime primitives. */
-import { matchRoute, type RouteDefinition } from "@javafy/core";
+import { matchRoute, validateRouteDefinitions, type RouteDefinition } from "@javafy/core";
 
 export type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS" | "HEAD";
 export interface ApiRouteContext {
@@ -31,6 +31,7 @@ export function createApiRouter(
   routes: readonly ApiRouteDefinition[],
   middleware: readonly JavafyMiddleware[] = []
 ) {
+  validateRouteDefinitions(routes);
   const handleApiRequest = async function handleApiRequest(request: Request): Promise<Response> {
     const url = new URL(request.url);
     const match = matchRoute(url.pathname, routes);

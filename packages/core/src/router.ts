@@ -68,6 +68,30 @@ export function isValidRoutePattern(pattern: string): boolean {
   return true;
 }
 
+/** Validate a route table and reject duplicate or ambiguous patterns early. */
+export function validateRouteDefinitions<T extends RouteDefinition>(routes: readonly T[]): void {
+  const seen = new Map<string, string>();
+  for (const route of routes) {
+    if (!route || typeof route.path !== "string" || route.path.trim() === "") {
+      throw new Error("Javafy routes: every route must have a non-empty path.");
+    }
+    if (!isValidRoutePattern(route.path)) {
+      throw new Error("Javafy routes: invalid route pattern: " + route.path);
+    }
+    const normalized = normalizePathname(route.path, true);
+    const signature = normalized.split("/").map((segment) => {
+      if (segment.startsWith(":")) return ":";
+      if (segment.startsWith("*")) return segment.endsWith("?") ? "*?" : "*";
+      return segment;
+    }).join("/");
+    const previous = seen.get(signature);
+    if (previous) {
+      throw new Error("Javafy routes: ambiguous route patterns: " + previous + " and " + route.path);
+    }
+    seen.set(signature, route.path);
+  }
+}
+
 /** Match routes by segment specificity. Static segments outrank dynamic and catch-all segments. */
 export function matchRoute<T extends RouteDefinition>(
   pathname: string,
