@@ -2,7 +2,7 @@
 
 ## Supported deployment model
 
-The supported production target is a long-running Node.js server on Node.js 20 or newer. Javafy's production server owns SSR and API requests; static-only hosts cannot execute those server routes. Static assets and generated pages are emitted to `dist/`.
+Javafy supports a long-running Node.js server and Vercel Node.js Functions. Static assets and generated pages are emitted to `dist/`; server-rendered pages, API routes, and middleware run through the server runtime.
 
 ## Build and start
 
@@ -24,6 +24,12 @@ For your own app, run the CLI from the application root after installing the pub
 | `PORT` | TCP port, integer 1–65535 | `javafy.config.js` `dev.port` |
 
 Use `HOST=0.0.0.0` in containers when the platform routes traffic to the container interface. Do not expose development endpoints in production; they are not part of the production server.
+
+## Vercel
+
+New projects created with `javafy create` include `api/index.js` and `vercel.json`. Connect the project to Vercel and deploy with the default configuration. The build command runs `npm run build`; Vercel serves generated files from `dist/` and rewrites unmatched paths to the Javafy Node.js function. This adapter uses the Node.js runtime, not the Edge runtime.
+
+If upgrading an existing project, add the generated `api/index.js` and `vercel.json` files from a fresh Javafy scaffold, then redeploy.
 
 ## Static hosting
 
