@@ -1,4 +1,4 @@
-const ANSI_PATTERN = /\u001b\[[0-?]*[ -/]*[@-~]|\u001b\][^\u0007]*(?:\u0007|\u001b\\\\)/g;
+const ANSI_PATTERN = /\u001b\[[0-?]*[ -/]*[@-~]|\u001b\][^\u0007]*(?:\u0007|\u001b\\)/g;
 
 type Style = (value: string) => string;
 type TableRow = readonly (string | number | boolean | null | undefined)[];
