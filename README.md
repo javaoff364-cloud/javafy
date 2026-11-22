@@ -4,11 +4,11 @@
 
 Javafy is a performance-first TypeScript fullstack framework for building React applications with file-based routing, API handlers, server rendering, and static generation.
 
-> Javafy 1.0.0 is merged into `main`. The four scoped workspace packages are prepared for npm publication.
+> Javafy 1.0.0 is published on npm. Install the CLI with `npm install -g @javafy/cli`, then scaffold an app with `javafy create <project-name>`.
 
 ## Features
 
-- TypeScript and TSX compilation powered by esbuild.
+- One-command project scaffolding with `javafy create <project-name>`.\n- TypeScript and TSX compilation powered by esbuild.
 - React 19 application runtime.
 - File-based pages, dynamic segments, required catch-all segments (`[...slug]`), optional catch-all segments (`[[...slug]]`), nested layouts, route-level loading UI, and inherited route error boundaries.
 - File-based API routes with GET, POST, PUT, PATCH, DELETE, OPTIONS, and HEAD.
@@ -31,14 +31,14 @@ Javafy is a performance-first TypeScript fullstack framework for building React 
 ## Quick start
 
 ```bash
-git clone https://github.com/javaoff364-cloud/javafy.git
-cd javafy
+npm install -g @javafy/cli
+javafy create my-javafy-app
+cd my-javafy-app
 npm install
-npm run build
-npm run dev:example
+npm run dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. To build and run for production, use `npm run build` and then `npm run start`.
 
 ## Pages and layouts
 
