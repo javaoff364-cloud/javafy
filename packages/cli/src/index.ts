@@ -681,10 +681,11 @@ async function dev(): Promise<void> {
   }
   terminal.title("development server");
   terminal.success("Javafy " + JAVAFY_VERSION + " is ready.");
+  terminal.section("Development");
   terminal.url("Local", "http://" + serverOptions.host + ":" + serverOptions.port);
-  terminal.info("File-based routing: " + terminal.enabled(entryConfig.usesRouter));
-  terminal.info("TypeScript/TSX compiler: " + terminal.enabled(true));
-  terminal.info("Live reload: " + terminal.enabled(true));
+  terminal.keyValue("File routing", terminal.enabled(entryConfig.usesRouter));
+  terminal.keyValue("TSX compiler", terminal.enabled(true));
+  terminal.keyValue("Live reload", terminal.enabled(true));
 
   const shutdown = async () => {
     server.close();
@@ -755,7 +756,11 @@ async function build(): Promise<void> {
     writeFileSync(join(output, "index.html"), html.replace("</body>", '<script type="module" src="/assets/app.js"></script>\n</body>'));
   }
 
+  terminal.title("production build");
   terminal.success("Production build created in dist/.");
+  terminal.section("Build output");
+  terminal.keyValue("Directory", "dist/");
+  terminal.keyValue("File-based routing", terminal.enabled(entryConfig.usesRouter));
   if (entryConfig.usesRouter) terminal.info("Client-side routes enabled; SPA fallback written to dist/_redirects.");
 }
 
@@ -849,9 +854,10 @@ async function start(): Promise<void> {
   await listenServer(server, port, host);
   terminal.title("production server");
   terminal.success("Javafy production server is ready.");
+  terminal.section("Production");
   terminal.url("Local", "http://" + host + ":" + port);
-  terminal.info("API routes: " + terminal.enabled(true));
-  terminal.info("Server-side rendering: " + terminal.enabled(true));
+  terminal.keyValue("API routes", terminal.enabled(true));
+  terminal.keyValue("Server rendering", terminal.enabled(true));
 }
 
 async function main(): Promise<void> {
