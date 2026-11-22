@@ -10,9 +10,11 @@ function quote(value: string): string {
 
 function renderNode(node: JavafyNode): string {
   switch (node.kind) {
-    case "Element":
-      return "React.createElement(" + quote(node.tag) + ", null, " +
-        node.children.map(renderNode).join(", ") + ")";
+    case "Element": {
+      const children = node.children.map(renderNode);
+      return "React.createElement(" + quote(node.tag) + ", null" +
+        (children.length ? ", " + children.join(", ") : "") + ")";
+    }
     case "Text":
       return "React.createElement(" + quote(node.tag) + ", null, " + quote(node.value) + ")";
     case "Button": {
@@ -26,7 +28,6 @@ function renderNode(node: JavafyNode): string {
   }
 }
 
-/** Generates an ES module exporting a React-compatible page factory. */
 export function generate(program: JavafyProgram, options: CodegenOptions = {}): string {
   const functionName = options.functionName ?? "createPage";
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(functionName)) {
