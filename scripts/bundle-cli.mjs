@@ -47,7 +47,6 @@ await build({
     "@babel/core", "@babel/preset-react", "@babel/preset-typescript",
     "react-refresh", "react-refresh/*"
   ],
-  banner: { js: "#!/usr/bin/env node" },
   sourcemap: false,
   logLevel: "info"
 });
