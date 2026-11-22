@@ -44,6 +44,12 @@
     },
     "_folder": {
       "iconPath": "./folder.svg"
+    },
+    "_jf": {
+      "iconPath": "./jf.svg"
+    },
+    "_jfx": {
+      "iconPath": "./jfx.svg"
     }
   },
   "fileExtensions": {
@@ -65,8 +71,8 @@
     "svg": "_svg",
     "yml": "_yaml",
     "yaml": "_yaml",
-    "jf": "jf",
-    "jfx": "jfx"
+    "jf": "_jf",
+    "jfx": "_jfx"
   },
   "fileNames": {
     "javafy.config.js": "_javafy",
