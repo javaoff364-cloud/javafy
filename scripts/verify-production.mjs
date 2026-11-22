@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 
 const root = process.cwd();
 const exampleDir = resolve(root, "examples/hello-world");
-const cli = resolve(root, "packages/cli/dist/index.js");
+const cli = resolve(root, "dist/index.js");
 const port = 4317;
 const origin = "http://127.0.0.1:" + port;
 const child = spawn(process.execPath, [cli, "start"], {

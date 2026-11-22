@@ -136,7 +136,7 @@ export function discoverFullstackFiles(appDir: string): DiscoveredFiles {
     }
   }
 
-  const notFound = ["not-found.jfx", "not-found.jfy", "not-found.tsx", "not-found.jf", "not-found.ts"].map((name) => resolve(appDir, name)).find(existsSync);
+  const notFound = ["404.jf", "404.jfx", "not-found.jfx", "not-found.jfy", "not-found.tsx", "not-found.jf", "not-found.ts"].map((name) => resolve(appDir, name)).find(existsSync);
   const middleware = findFile(appDir, ["middleware.jf", "middleware.ts"]);
   walk(appDir, []);
   return { pages, api, ...(notFound ? { notFound } : {}), ...(middleware ? { middleware } : {}), watchDirs };

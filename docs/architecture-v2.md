@@ -228,7 +228,7 @@ The file path determines the default endpoint path. If an explicit `path` is pre
 
 ## 5. Compiler architecture
 
-The compiler is a first-class package, proposed as `@javafy/compiler`.
+The compiler is a first-class package, proposed as `javafy/compiler`.
 
 Pipeline:
 
@@ -246,11 +246,11 @@ Compiler diagnostics must include file, line, column, a concise message, and (wh
 
 Proposed package responsibilities:
 
-- `@javafy/compiler`: lexer, parser, AST, semantic analysis, transforms, diagnostics.
-- `@javafy/core`: shared config, route manifest types, resolution utilities.
-- `@javafy/router`: browser navigation and route rendering.
-- `@javafy/server`: server request pipeline, middleware, API dispatch, SSR.
-- `@javafy/cli`: project creation, dev server, compiler orchestration, production build.
+- `javafy/compiler`: lexer, parser, AST, semantic analysis, transforms, diagnostics.
+- `javafy/core`: shared config, route manifest types, resolution utilities.
+- `javafy/router`: browser navigation and route rendering.
+- `javafy/server`: server request pipeline, middleware, API dispatch, SSR.
+- `javafy`: project creation, dev server, compiler orchestration, production build.
 
 The compiler must not duplicate routing behavior. It emits a normalized route manifest consumed by the existing core/router/server layers.
 
@@ -268,7 +268,7 @@ The compiler must not duplicate routing behavior. It emits a normalized route ma
 The existing `javafy.config.ts` remains the project configuration entry point. Proposed options:
 
 ```ts
-import { defineConfig } from "@javafy/core";
+import { defineConfig } from "javafy/core";
 
 export default defineConfig({
   source: {
@@ -290,7 +290,7 @@ The exact exported API must be checked against the current config implementation
 - Define route conflict, precedence, and server/client boundary tests.
 
 ### B. Compiler foundation
-- Add `@javafy/compiler`.
+- Add `javafy/compiler`.
 - Implement lexer, parser, AST, source spans, diagnostics.
 - Add parser snapshots and malformed-input tests.
 

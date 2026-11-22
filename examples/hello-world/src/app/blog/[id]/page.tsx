@@ -1,4 +1,4 @@
-import { useRouter } from "@javafy/router";
+import { useRouter } from "javafy/router";
 
 type BlogPageProps = {
   params: Record<string, string>;

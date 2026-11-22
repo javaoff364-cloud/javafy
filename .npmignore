@@ -1,0 +1,5 @@
+**/*.map
+**/*.tsbuildinfo
+**/test/**
+**/tests/**
+**/.github/**

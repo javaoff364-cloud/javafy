@@ -1,25 +1,17 @@
-# Releasing Javafy 1.0.0
+# Releasing Javafy
 
-This repository is an npm workspace monorepo. The root package is intentionally
-private and must not be published. Publish only these four public packages:
+Javafy is released as one public npm package: `javafy`. The workspace packages under `packages/` are internal build units and must not be published separately.
 
-1. `@javafy/core`
-2. `@javafy/router`
-3. `@javafy/server`
-4. `@javafy/cli`
+## Pre-release verification
 
-All four packages must have the same version. Publish in the order above so
-internal dependencies are available before dependent packages.
-
-## 1. Verify the checkout
-
-Use Node.js 20 or newer and npm 10 or newer.
+Use Node.js 20+ and npm 10+.
 
 ```sh
 git checkout main
 git pull origin main
 npm install
 npm run build
+npm run typecheck:example
 npm test
 npm run test:packages
 npm run test:production
@@ -27,55 +19,28 @@ npm run audit
 npm run benchmark
 ```
 
-Do not publish if any command fails. Review the packed files from
-`npm run test:packages`; each package must include its compiled `dist/`
-output and its own README, and must exclude tests, source maps, and build
-metadata.
+Do not publish if any check fails. The package smoke test packs the root package, installs that tarball into a clean fixture, checks every public export, and runs the bundled CLI.
 
-## 2. Verify npm access
+## Publish
 
-The publisher must be signed in to npm and have publish permission for the
-`@javafy` scope (an npm organization or account scope they control).
+First verify the package name and publisher permissions on npm. Sign in locally; never put credentials or tokens in source control or chat.
 
 ```sh
 npm login
 npm whoami
+npm view javafy version
+npm pack --dry-run
+npm publish --access public
 ```
 
-Never share an npm password, access token, or one-time code in chat or commit
-credentials to this repository.
+If `javafy` is already owned by another publisher, stop and resolve the name/ownership issue rather than silently switching to scoped package names. Never attempt to overwrite an immutable published version. Increment the version in the root `package.json` for every subsequent release.
 
-## 3. Publish the workspaces
-
-Run these commands one at a time and confirm each succeeds before continuing:
+## Verify registry and CLI
 
 ```sh
-npm publish --workspace=packages/core --access public
-npm publish --workspace=packages/router --access public
-npm publish --workspace=packages/server --access public
-npm publish --workspace=packages/cli --access public
+npm view javafy version
+npm install -g javafy
+javafy --version
 ```
 
-The packages declare public access in `publishConfig`; the explicit
-`--access public` also makes the intended visibility clear for first publish.
-
-## 4. Verify the registry
-
-```sh
-npm view @javafy/core version
-npm view @javafy/router version
-npm view @javafy/server version
-npm view @javafy/cli version
-```
-
-Each command must report `1.0.0`. Then install the CLI in a clean test
-directory and verify `javafy --version` reports `1.0.0`.
-
-## 5. Create the public release
-
-After all four npm packages are verified, create the Git tag `v1.0.0` on
-`main` and publish the GitHub Release using the 1.0.0 changelog notes.
-
-Do not publish the private root workspace. Do not publish a package twice if
-the registry already contains the same immutable version; inspect the registry
-first and use a new version only through a separately reviewed release plan.
+Only after registry verification should the matching Git tag and GitHub Release be created.

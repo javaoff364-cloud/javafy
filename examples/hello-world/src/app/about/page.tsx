@@ -1,4 +1,4 @@
-import { useRouter } from "@javafy/router";
+import { useRouter } from "javafy/router";
 
 export default function AboutPage({ renderedAt }: { renderedAt?: string }) {
   const router = useRouter();

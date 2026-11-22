@@ -1,4 +1,4 @@
-import { Link } from "@javafy/router";
+import { Link } from "javafy/router";
 
 export default function HomePage() {
   return (

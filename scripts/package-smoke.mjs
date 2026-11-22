@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -11,64 +11,53 @@ const fixtureDir = join(temporary, "fixture");
 mkdirSync(tarballDir, { recursive: true });
 mkdirSync(fixtureDir, { recursive: true });
 
-function assertProcessSucceeded(label, args, result) {
-  assert.equal(result.status, 0, label + " " + args.join(" ") + " failed:\n" + result.stdout + "\n" + result.stderr);
+function run(command, args, cwd = root) {
+  const result = spawnSync(command, args, {
+    cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"]
+  });
+  assert.equal(result.status, 0, command + " " + args.join(" ") + " failed:\n" + result.stdout + "\n" + result.stderr);
   return result.stdout;
-}
-function runNpm(args, cwd = root) {
-  return assertProcessSucceeded("npm", args, spawnSync("npm", args, {
-    cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"]
-  }));
-}
-function runNode(args, cwd = root) {
-  return assertProcessSucceeded("node", args, spawnSync(process.execPath, args, {
-    cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"]
-  }));
 }
 
 try {
-  const workspaces = ["@javafy/core", "@javafy/compiler", "@javafy/router", "@javafy/server", "@javafy/cli"];
-  const tarballs = [];
-  const packageTarballNames = {
-    "@javafy/core": "javafy-core",
-    "@javafy/compiler": "javafy-compiler",
-    "@javafy/router": "javafy-router",
-    "@javafy/server": "javafy-server",
-    "@javafy/cli": "javafy-cli"
-  };
+  const output = run("npm", ["pack", "--pack-destination", tarballDir, "--json"]);
+  const [packed] = JSON.parse(output);
+  assert.equal(packed.name, "javafy");
+  assert.equal(packed.version, "1.0.2");
 
-  for (const workspace of workspaces) {
-    const output = runNpm(["pack", "--workspace", workspace, "--pack-destination", tarballDir, "--json"]);
-    const parsed = JSON.parse(output);
-    const packed = Array.isArray(parsed) ? parsed : Object.values(parsed).filter((entry) => entry && typeof entry === "object" && "filename" in entry);
-    assert.equal(packed.length, 1, workspace + " should produce exactly one package tarball");
-    const [packageInfo] = packed;
-    const files = packageInfo.files.map((file) => file.path);
-    assert.ok(files.some((file) => file.startsWith("dist/")), workspace + " does not include compiled dist files");
-    assert.ok(files.includes("README.md"), workspace + " does not include its npm README");
-    assert.ok(!files.some((file) => /(^|\/)(test|tests|\.github)(\/|$)/.test(file)), workspace + " includes test or CI files");
-    assert.ok(!files.some((file) => /\.map$|\.tsbuildinfo$/.test(file)), workspace + " includes build-only artifacts");
-    const expectedFilename = packageTarballNames[workspace] + "-1.0.1.tgz";
-    assert.equal(packageInfo.filename, expectedFilename, workspace + " produced an unexpected tarball name");
-    tarballs.push(join(tarballDir, expectedFilename));
-    console.log("Packed:", workspace, packageInfo.version, files.length, "files");
+  const files = packed.files.map((file) => file.path);
+  for (const required of [
+    "dist/index.js", "dist/core.js", "dist/router.js", "dist/server.js",
+    "dist/compiler.js", "dist/vercel.js", "README.md", "LICENSE"
+  ]) {
+    assert.ok(files.includes(required), "npm tarball is missing " + required);
   }
+  assert.ok(!files.some((file) => file.split("/").some((part) => ["test", "tests", ".github", "src"].includes(part))),
+    "npm tarball contains development-only files");
+  assert.ok(!files.some((file) => file.endsWith(".map") || file.endsWith(".tsbuildinfo")),
+    "npm tarball contains build metadata");
 
-  runNpm(["install", "--offline", "--no-audit", "--no-fund", "--no-save", "--package-lock=false", "--prefix", fixtureDir, ...tarballs]);
-  const importCheck = [
-    'import { resolveConfig } from "@javafy/core";',
-    'import { parse, generate } from "@javafy/compiler";',
-    'import { createApiRouter } from "@javafy/server";',
-    'import { createRouter } from "@javafy/router";',
-    'if (resolveConfig().dev.port !== 3000) throw new Error("core package import failed");',
-    'if (parse("page Home { render {} }").page.name !== "Home") throw new Error("compiler parser import failed");\nif (!generate(parse("page Home { render { h1 \\"Hi\\" } }")).includes("React.createElement")) throw new Error("compiler codegen import failed");',
-    'if (typeof createApiRouter !== "function" || typeof createRouter !== "function") throw new Error("package exports failed");'
+  run("npm", [
+    "install", "--offline", "--no-audit", "--no-fund", "--no-save",
+    "--package-lock=false", "--prefix", fixtureDir, join(tarballDir, packed.filename)
+  ]);
+
+  const imports = [
+    'import { resolveConfig } from "javafy";',
+    'import { createRouter } from "javafy/router";',
+    'import { createApiRouter } from "javafy/server";',
+    'import { parse } from "javafy/compiler";',
+    'if (resolveConfig().dev.port !== 3000) throw new Error("core export failed");',
+    'if (typeof createRouter !== "function" || typeof createApiRouter !== "function") throw new Error("runtime exports failed");',
+    'if (parse("page Home { render {} }").page.name !== "Home") throw new Error("compiler export failed");'
   ].join("\n");
-  runNode(["--input-type=module", "-e", importCheck], fixtureDir);
-  const cliOutput = runNode(["node_modules/@javafy/cli/dist/index.js", "--version"], fixtureDir).trim();
-  assert.match(cliOutput, /^\d+\.\d+\.\d+$/);
-  assert.equal(readdirSync(join(fixtureDir, "node_modules", "@javafy")).length, 5);
-  console.log("Clean package installation and ESM imports passed.");
+  run(process.execPath, ["--input-type=module", "-e", imports], fixtureDir);
+
+  assert.equal(
+    run(process.execPath, ["node_modules/javafy/dist/index.js", "--version"], fixtureDir).trim(),
+    "1.0.2"
+  );
+  console.log("Single-package install, ESM exports, and bundled CLI passed.");
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }
