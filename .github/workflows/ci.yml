@@ -41,3 +41,11 @@ jobs:
         run: npm run build:example
       - name: Production fullstack smoke tests
         run: node scripts/verify-production.mjs
+      - name: Performance baseline
+        run: npm run benchmark > benchmark-results.json
+      - name: Upload benchmark report
+        uses: actions/upload-artifact@v4
+        with:
+          name: javafy-benchmark-node-${{ matrix.node }}
+          path: benchmark-results.json
+          if-no-files-found: error
