@@ -23,18 +23,19 @@ jobs:
       matrix:
         node: [20, 22, 24]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
+          cache: npm
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       - name: TypeScript build
         run: npm run build
-      - name: Core router tests
+      - name: Unit and integration tests
         run: npm test
+      - name: Package contents and installation metadata
+        run: npm run test:packages
       - name: Example typecheck
         run: npm run typecheck:example
       - name: Example production build
@@ -43,8 +44,9 @@ jobs:
         run: node scripts/verify-production.mjs
       - name: Performance baseline
         run: npm run benchmark > benchmark-results.json
-      - name: Upload benchmark report
-        uses: actions/upload-artifact@v4
+      - name: Dependency security audit
+        run: npm audit --omit=dev
+      - uses: actions/upload-artifact@v4
         with:
           name: javafy-benchmark-node-${{ matrix.node }}
           path: benchmark-results.json

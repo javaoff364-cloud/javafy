@@ -18,7 +18,10 @@
     "build:example": "npm run build && cd examples/hello-world && node ../../packages/cli/dist/index.js build",
     "start:example": "cd examples/hello-world && node ../../packages/cli/dist/index.js start",
     "typecheck:example": "tsc --noEmit -p examples/hello-world/tsconfig.json",
-    "benchmark": "node scripts/benchmark.mjs"
+    "benchmark": "node scripts/benchmark.mjs",
+    "test:packages": "node scripts/package-smoke.mjs",
+    "test:production": "npm run build && npm run typecheck:example && npm run build:example && node scripts/verify-production.mjs",
+    "audit": "npm audit --omit=dev"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
