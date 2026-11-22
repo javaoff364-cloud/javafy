@@ -2,9 +2,9 @@
 
 ## Supported versions
 
-Security fixes are applied to the latest stable Javafy release. During the 1.0.0
-release-candidate period, security fixes are also considered for the active
-1.0.0 development branch.
+Security fixes are applied to the latest stable Javafy 1.x release. Users
+should upgrade to the newest published patch release when a security fix is
+available.
 
 ## Reporting a vulnerability
 
